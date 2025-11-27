@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vacant Lot: History, Futurity & Expression</title>
+    
+    <!-- Mapbox GL JS -->
+    <link href='https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css' rel='stylesheet' />
+    <script src='https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js'></script>
+    
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Landing Page -->
+        <div id="landing-page" class="scene active">
+            <svg id="lot-boundary-svg" viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg">
+                <polygon id="lot-polygon" points="250,150 750,150 850,500 750,850 250,850 150,500" 
+                         fill="none" stroke="#64c8ff" stroke-width="3"/>
+            </svg>
+            
+            <h1>Welcome to the Vacant Lot</h1>
+            <p>This is an exploration of history, futurity, and creative expression.</p>
+
+            <!-- Top Left: Presence -->
+            <div class="adventure-icon" data-adventure="presence">
+                <div class="icon-symbol">▶</div>
+                <div class="icon-label">Presence</div>
+            </div>
+
+            <!-- Top Right: Data Lives -->
+            <div class="adventure-icon" data-adventure="data-lives">
+                <div class="icon-symbol">📊</div>
+                <div class="icon-label">Data Lives</div>
+            </div>
+
+            <!-- Bottom Left: Time -->
+            <div class="adventure-icon" data-adventure="time">
+                <div class="icon-symbol">⏳</div>
+                <div class="icon-label">Time</div>
+            </div>
+
+            <!-- Bottom Right: Create -->
+            <div class="adventure-icon" data-adventure="create">
+                <div class="icon-symbol">✏</div>
+                <div class="icon-label">Create</div>
+            </div>
+        </div>
+
+        <!-- Presence Section -->
+        <div id="presence-section" class="scene">
+            <div class="section-header">
+                <button class="home-button" onclick="goHome()">← Home</button>
+                <h2 class="section-title">Presence</h2>
+            </div>
+            <div class="section-content">
+                <div class="placeholder-content">Video to come</div>
+            </div>
+        </div>
+
+        <!-- Data Lives Section (Map) -->
+        <div id="data-lives-section" class="scene">
+            <div class="section-header">
+                <button class="home-button" onclick="goHome()">← Home</button>
+                <h2 class="section-title">Data Lives</h2>
+            </div>
+            <div id="map-container"></div>
+        </div>
+
+        <!-- Time Section (Timeline) -->
+        <div id="time-section" class="scene">
+            <div class="section-header">
+                <button class="home-button" onclick="goHome()">← Home</button>
+                <h2 class="section-title">Time</h2>
+            </div>
+            <div class="section-content">
+                <div id="timeline-container"></div>
+                <canvas id="fence-canvas"></canvas>
+            </div>
+        </div>
+
+        <!-- Create Section -->
+        <div id="create-section" class="scene">
+            <div class="section-header">
+                <button class="home-button" onclick="goHome()">← Home</button>
+                <h2 class="section-title">Create</h2>
+            </div>
+            <div class="section-content">
+                <div class="placeholder-content">More to come</div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://unpkg.com/konva@9/konva.min.js"></script>
+    <script src="config.js"></script>
+    <script src="js/mapbox-scene.js"></script>
+    <script src="js/fence-scene.js"></script>
+    <script src="js/transition.js"></script>
+    <script src="js/timeline-scene.js"></script>
+
+    <script>
+        // Navigation logic
+        function showScene(sceneId) {
+            console.log('[Navigation] showScene called with:', sceneId);
+            const scenes = document.querySelectorAll('.scene');
+            console.log('[Navigation] Found scenes:', scenes.length);
+            scenes.forEach(s => {
+                s.classList.remove('active');
+                s.style.display = 'none';
+                console.log('[Navigation] Removed active from:', s.id);
+            });
+            const targetScene = document.getElementById(sceneId);
+            console.log('[Navigation] Target scene:', targetScene ? targetScene.id : 'NOT FOUND');
+            if (targetScene) {
+                targetScene.style.display = 'block';
+                targetScene.classList.add('active');
+                console.log('[Navigation] Added active to:', sceneId);
+                
+                // Initialize the appropriate section
+                if (sceneId === 'data-lives-section') {
+                    // Initialize map if not already done
+                    if (window.mapboxScene && typeof window.mapboxScene.initInteractiveMap === 'function' && !window.mapboxScene.map) {
+                        try {
+                            window.mapboxScene.initInteractiveMap();
+                        } catch (err) {
+                            console.error('Map init error:', err);
+                        }
+                    }
+                } else if (sceneId === 'time-section') {
+                    console.log('[Navigation] Initializing timeline scene...');
+                    // Initialize timeline if needed
+                    if (window.timelineScene && typeof window.timelineScene.init === 'function') {
+                        try {
+                            if (!window.timelineScene.stage) {
+                                window.timelineScene.init();
+                            }
+                        } catch (err) {
+                            console.error('Timeline scene error:', err);
+                        }
+                    } else {
+                        console.error('[Navigation] timelineScene not found or init not a function');
+                    }
+                }
+            }
+        }
+
+        function goHome() {
+            showScene('landing-page');
+        }
+
+        // Wire adventure icons to their sections
+        document.addEventListener('DOMContentLoaded', () => {
+            const adventureIcons = document.querySelectorAll('.adventure-icon');
+            adventureIcons.forEach(icon => {
+                icon.addEventListener('click', () => {
+                    const adventure = icon.getAttribute('data-adventure');
+                    const sectionMap = {
+                        'presence': 'presence-section',
+                        'data-lives': 'data-lives-section',
+                        'time': 'time-section',
+                        'create': 'create-section'
+                    };
+                    showScene(sectionMap[adventure]);
+                });
+            });
+
+            // Error overlay setup (same as before)
+            const showErrorOverlay = (msg) => {
+                let ov = document.getElementById('error-overlay');
+                if (!ov) {
+                    ov = document.createElement('div');
+                    ov.id = 'error-overlay';
+                    Object.assign(ov.style, {
+                        position: 'fixed', left: '0', right: '0', top: '0', bottom: '0',
+                        background: 'rgba(0,0,0,0.6)', color: '#fff', zIndex: 99999,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        padding: '20px', fontFamily: 'sans-serif'
+                    });
+                    const box = document.createElement('div');
+                    box.style.maxWidth = '900px';
+                    box.style.background = '#1a1a1a';
+                    box.style.padding = '18px';
+                    box.style.borderRadius = '6px';
+                    box.style.boxShadow = '0 8px 24px rgba(0,0,0,0.6)';
+                    const h = document.createElement('h2'); h.textContent = 'An error occurred';
+                    h.style.marginTop = '0';
+                    const p = document.createElement('pre'); p.style.whiteSpace = 'pre-wrap'; p.style.color = '#ffdddd';
+                    p.textContent = msg;
+                    box.appendChild(h); box.appendChild(p);
+                    ov.appendChild(box);
+                    document.body.appendChild(ov);
+                } else {
+                    ov.querySelector('pre').textContent = msg;
+                    ov.style.display = 'flex';
+                }
+            };
+
+            window.addEventListener('error', (ev) => {
+                const msg = ev.error && ev.error.stack ? ev.error.stack : (ev.message || String(ev));
+                let ov = document.getElementById('error-overlay');
+                if (!ov) {
+                    ov = document.createElement('div');
+                    ov.id = 'error-overlay';
+                    Object.assign(ov.style, {
+                        position: 'fixed', left: '0', right: '0', top: '0', bottom: '0',
+                        background: 'rgba(0,0,0,0.6)', color: '#fff', zIndex: 99999,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        padding: '20px', fontFamily: 'sans-serif'
+                    });
+                    const box = document.createElement('div');
+                    box.style.maxWidth = '900px';
+                    box.style.background = '#1a1a1a';
+                    box.style.padding = '18px';
+                    box.style.borderRadius = '6px';
+                    box.style.boxShadow = '0 8px 24px rgba(0,0,0,0.6)';
+                    const h = document.createElement('h2'); h.textContent = 'Unhandled Error';
+                    h.style.marginTop = '0';
+                    const p = document.createElement('pre'); p.style.whiteSpace = 'pre-wrap'; p.style.color = '#ffdddd';
+                    p.textContent = msg;
+                    box.appendChild(h); box.appendChild(p);
+                    ov.appendChild(box);
+                    document.body.appendChild(ov);
+                } else {
+                    ov.querySelector('pre').textContent = msg;
+                    ov.style.display = 'flex';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
