@@ -538,47 +538,72 @@ class MapboxScene {
     // Render a small legend (simple) into the layer control area
     _renderLegend(legendInfo) {
         try {
-            const container = document.getElementById('layer-control');
-            if (!container) return;
-            // remove existing legend if present
+            const mapContainer = document.getElementById('map-container');
+            if (!mapContainer) return;
+            
+            // Remove existing legend if present
             const existing = document.getElementById('vacant-legend');
             if (existing) existing.parentNode.removeChild(existing);
 
             const legend = document.createElement('div');
             legend.id = 'vacant-legend';
-            legend.style.marginTop = '8px';
-            legend.style.fontSize = '12px';
-            legend.style.maxWidth = '220px';
+            Object.assign(legend.style, {
+                position: 'absolute',
+                bottom: '20px',
+                right: '20px',
+                background: 'rgba(0, 0, 0, 0.85)',
+                color: '#fff',
+                padding: '12px 16px',
+                borderRadius: '6px',
+                fontSize: '12px',
+                zIndex: 1000,
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                minWidth: '160px'
+            });
+
+            const title = document.createElement('div');
+            title.textContent = 'Vacant Lots';
+            title.style.fontWeight = '700';
+            title.style.marginBottom = '8px';
+            title.style.fontSize = '13px';
+            legend.appendChild(title);
+
             const { breaks, colors } = legendInfo;
-            // breaks: array length classes+1
             const classes = colors.length;
-            const thresholds = breaks.slice(0); // copy
 
             for (let i = 0; i < classes; i++) {
                 const row = document.createElement('div');
                 row.style.display = 'flex';
                 row.style.alignItems = 'center';
                 row.style.gap = '8px';
-                row.style.marginBottom = '4px';
+                row.style.marginBottom = '3px';
 
                 const swatch = document.createElement('span');
-                swatch.style.width = '16px';
-                swatch.style.height = '12px';
+                swatch.style.width = '18px';
+                swatch.style.height = '14px';
                 swatch.style.background = colors[i];
                 swatch.style.display = 'inline-block';
-                swatch.style.border = '1px solid rgba(0,0,0,0.15)';
+                swatch.style.border = '1px solid rgba(255,255,255,0.2)';
+                swatch.style.borderRadius = '2px';
 
                 const label = document.createElement('span');
-                const lo = Math.round(thresholds[i]);
-                const hi = Math.round(thresholds[i+1] || thresholds[i]);
-                label.textContent = `${lo} — ${hi}`;
+                const lo = Math.round(breaks[i]);
+                const hi = i < classes - 1 ? Math.round(breaks[i + 1]) - 1 : Math.round(breaks[i + 1] || breaks[i]);
+                
+                if (i === classes - 1) {
+                    label.textContent = `${lo}+`;
+                } else {
+                    label.textContent = `${lo}–${hi}`;
+                }
+                
+                label.style.fontSize = '11px';
 
                 row.appendChild(swatch);
                 row.appendChild(label);
                 legend.appendChild(row);
             }
 
-            container.appendChild(legend);
+            mapContainer.appendChild(legend);
         } catch (err) {
             console.warn('Failed to render legend:', err);
         }
@@ -755,7 +780,7 @@ class MapboxScene {
                 }
 
                 // Render legend
-                this._renderLegend(breaks, colors);
+                this._renderLegend({ breaks, colors });
 
                 // Fit bounds to data
                 const bounds = this._computeGeoJSONBounds(geojsonData);
