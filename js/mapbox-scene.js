@@ -683,9 +683,9 @@ class MapboxScene {
             container: 'map-container',
             style: 'mapbox://styles/andy-rutkowski/cmi6n8nss002e01r58sgd5lid',
             center: [CONFIG.lotLocation.lng, CONFIG.lotLocation.lat],
-            zoom: 14,
-            pitch: 0,
-            bearing: 0,
+            zoom: 10,
+            pitch: 60,
+            bearing: -20,
             interactive: true,
             attributionControl: false
         });
@@ -785,7 +785,14 @@ class MapboxScene {
                 // Fit bounds to data
                 const bounds = this._computeGeoJSONBounds(geojsonData);
                 if (bounds) {
-                    this.map.fitBounds(bounds, { padding: 40 });
+                    this.map.fitBounds(
+                        [[bounds.minLng, bounds.minLat], [bounds.maxLng, bounds.maxLat]], 
+                        { 
+                            padding: 60,
+                            pitch: 60,
+                            bearing: -20
+                        }
+                    );
                 }
 
                 console.log('[MapboxScene] Vacant land layer added and styled');
