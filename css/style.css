@@ -167,6 +167,14 @@ body {
     right: 40px;
 }
 
+/* Bottom-center: Cases */
+.adventure-icon[data-adventure="cases"] {
+    position: absolute;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
 /* Sections */
 .section-header {
     position: absolute;
@@ -310,6 +318,21 @@ body {
     text-align: center;
 }
 
+/* Presence Video */
+#presence-section {
+    background: #000;
+}
+
+#presence-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    cursor: pointer;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
 /* Loading indicator */
 .loading {
     position: absolute;
@@ -331,4 +354,190 @@ body {
     border-radius: 8px;
     border: 1px solid rgba(255, 255, 255, 0.2);
     z-index: 500;
+}
+
+/* Cases Gallery */
+#cases-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 24px;
+    padding: 40px;
+    width: 100%;
+}
+
+.case-tile {
+    position: relative;
+    background: #1a1a1a;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    aspect-ratio: 4 / 3;
+}
+
+.case-tile:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(100, 200, 255, 0.3);
+    border-color: rgba(100, 200, 255, 0.5);
+}
+
+.case-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.case-metadata {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.7) 70%, transparent 100%);
+    padding: 20px 16px 16px 16px;
+    color: #fff;
+}
+
+.case-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: #fff;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.case-artist {
+    font-size: 13px;
+    color: #aaa;
+    font-weight: 500;
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9);
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.modal-content {
+    position: relative;
+    background-color: #1a1a1a;
+    border-radius: 12px;
+    max-width: 900px;
+    max-height: 90vh;
+    width: 100%;
+    overflow-y: auto;
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-close {
+    position: sticky;
+    top: 0;
+    right: 0;
+    float: right;
+    font-size: 36px;
+    font-weight: 700;
+    color: #fff;
+    cursor: pointer;
+    padding: 12px 20px;
+    line-height: 1;
+    background: rgba(0, 0, 0, 0.8);
+    border-radius: 0 12px 0 0;
+    z-index: 10;
+}
+
+.modal-close:hover,
+.modal-close:focus {
+    color: #64c8ff;
+}
+
+#modal-body {
+    padding: 40px;
+    padding-top: 20px;
+}
+
+.modal-image {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin-bottom: 24px;
+}
+
+.modal-metadata {
+    color: #fff;
+}
+
+.metadata-field {
+    margin-bottom: 16px;
+    line-height: 1.6;
+}
+
+.metadata-field strong {
+    color: #64c8ff;
+    display: inline-block;
+    min-width: 180px;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.metadata-field span {
+    color: #ddd;
+    font-size: 15px;
+}
+
+.metadata-field a {
+    color: #64c8ff;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(100, 200, 255, 0.3);
+    transition: border-color 0.2s ease;
+}
+
+.metadata-field a:hover {
+    border-bottom-color: #64c8ff;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    #cases-gallery {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 16px;
+        padding: 20px;
+    }
+    
+    .case-title {
+        font-size: 14px;
+    }
+    
+    .case-artist {
+        font-size: 12px;
+    }
+    
+    #modal-body {
+        padding: 20px;
+    }
+    
+    .metadata-field strong {
+        display: block;
+        margin-bottom: 4px;
+    }
 }

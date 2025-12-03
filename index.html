@@ -18,45 +18,64 @@
             <svg id="lot-boundary-svg" viewBox="0 0 1000 1000" xmlns="http://www.w3.org/2000/svg">
                 <polygon id="lot-polygon" points="250,150 750,150 850,500 750,850 250,850 150,500" 
                          fill="none" stroke="#64c8ff" stroke-width="3"/>
+                
+                <!-- Dashed lines from center to each section -->
+                <!-- To Presence (top-left) -->
+                <line x1="500" y1="500" x2="150" y2="150" stroke="#64c8ff" stroke-width="2" stroke-dasharray="10,10" opacity="0.7"/>
+                
+                <!-- To Data Lives (top-right) -->
+                <line x1="500" y1="500" x2="850" y2="150" stroke="#64c8ff" stroke-width="2" stroke-dasharray="10,10" opacity="0.7"/>
+                
+                <!-- To Time (left) -->
+                <line x1="500" y1="500" x2="50" y2="500" stroke="#64c8ff" stroke-width="2" stroke-dasharray="10,10" opacity="0.7"/>
+                
+                <!-- To Create (right) -->
+                <line x1="500" y1="500" x2="950" y2="500" stroke="#64c8ff" stroke-width="2" stroke-dasharray="10,10" opacity="0.7"/>
+                
+                <!-- To Cases (bottom) -->
+                <line x1="500" y1="500" x2="500" y2="950" stroke="#64c8ff" stroke-width="2" stroke-dasharray="10,10" opacity="0.7"/>
             </svg>
             
             <h1>Welcome to the Vacant Lot</h1>
             <p>This is an exploration of history, futurity, and creative expression.</p>
 
             <!-- Top Left: Presence -->
-            <div class="adventure-icon" data-adventure="presence">
+            <div class="adventure-icon" data-adventure="presence" style="left: 5%; top: 5%;">
                 <div class="icon-symbol">▶</div>
                 <div class="icon-label">Presence</div>
             </div>
 
             <!-- Top Right: Data Lives -->
-            <div class="adventure-icon" data-adventure="data-lives">
+            <div class="adventure-icon" data-adventure="data-lives" style="right: 5%; top: 5%;">
                 <div class="icon-symbol">📊</div>
                 <div class="icon-label">Data Lives</div>
             </div>
 
-            <!-- Bottom Left: Time -->
-            <div class="adventure-icon" data-adventure="time">
+            <!-- Left: Time -->
+            <div class="adventure-icon" data-adventure="time" style="left: 5%; top: 50%; transform: translateY(-50%);">
                 <div class="icon-symbol">⏳</div>
                 <div class="icon-label">Time</div>
             </div>
 
-            <!-- Bottom Right: Create -->
-            <div class="adventure-icon" data-adventure="create">
+            <!-- Right: Create -->
+            <div class="adventure-icon" data-adventure="create" style="right: 5%; top: 50%; transform: translateY(-50%);">
                 <div class="icon-symbol">✏</div>
                 <div class="icon-label">Create</div>
+            </div>
+
+            <!-- Bottom: Cases -->
+            <div class="adventure-icon" data-adventure="cases" style="left: 50%; bottom: 5%; transform: translateX(-50%);">
+                <div class="icon-symbol">📁</div>
+                <div class="icon-label">Cases</div>
             </div>
         </div>
 
         <!-- Presence Section -->
         <div id="presence-section" class="scene">
-            <div class="section-header">
-                <button class="home-button" onclick="goHome()">← Home</button>
-                <h2 class="section-title">Presence</h2>
-            </div>
-            <div class="section-content">
-                <div class="placeholder-content">Video to come</div>
-            </div>
+            <video id="presence-video" autoplay loop muted playsinline>
+                <source src="assets/media/vermont1.mov" type="video/mp4">
+                Your browser does not support the video tag.
+            </video>
         </div>
 
         <!-- Data Lives Section (Map) -->
@@ -90,6 +109,24 @@
                 <div class="placeholder-content">More to come</div>
             </div>
         </div>
+
+        <!-- Cases Section (Gallery) -->
+        <div id="cases-section" class="scene">
+            <div class="section-header">
+                <button class="home-button" onclick="goHome()">← Home</button>
+                <h2 class="section-title">Cases</h2>
+            </div>
+            <div class="section-content">
+                <div id="cases-gallery"></div>
+            </div>
+            <!-- Modal for expanded view -->
+            <div id="case-modal" class="modal">
+                <div class="modal-content">
+                    <span class="modal-close">&times;</span>
+                    <div id="modal-body"></div>
+                </div>
+            </div>
+        </div>
     </div>
     
     <script src="https://unpkg.com/konva@9/konva.min.js"></script>
@@ -98,6 +135,7 @@
     <script src="js/fence-scene.js"></script>
     <script src="js/transition.js"></script>
     <script src="js/timeline-scene.js"></script>
+    <script src="js/cases-gallery.js"></script>
 
     <script>
         // Navigation logic
@@ -118,7 +156,13 @@
                 console.log('[Navigation] Added active to:', sceneId);
                 
                 // Initialize the appropriate section
-                if (sceneId === 'data-lives-section') {
+                if (sceneId === 'presence-section') {
+                    // Play video when entering presence section
+                    const video = document.getElementById('presence-video');
+                    if (video) {
+                        video.play().catch(err => console.log('Video autoplay blocked:', err));
+                    }
+                } else if (sceneId === 'data-lives-section') {
                     // Initialize map if not already done
                     if (window.mapboxScene && typeof window.mapboxScene.initInteractiveMap === 'function' && !window.mapboxScene.map) {
                         try {
@@ -141,6 +185,17 @@
                     } else {
                         console.error('[Navigation] timelineScene not found or init not a function');
                     }
+                } else if (sceneId === 'cases-section') {
+                    // Initialize cases gallery if needed
+                    if (window.casesGallery && typeof window.casesGallery.init === 'function') {
+                        try {
+                            if (!window.casesGallery.initialized) {
+                                window.casesGallery.init();
+                            }
+                        } catch (err) {
+                            console.error('Cases gallery error:', err);
+                        }
+                    }
                 }
             }
         }
@@ -151,6 +206,14 @@
 
         // Wire adventure icons to their sections
         document.addEventListener('DOMContentLoaded', () => {
+            // Setup presence video click-to-home
+            const presenceVideo = document.getElementById('presence-video');
+            if (presenceVideo) {
+                presenceVideo.addEventListener('click', () => {
+                    goHome();
+                });
+            }
+            
             const adventureIcons = document.querySelectorAll('.adventure-icon');
             adventureIcons.forEach(icon => {
                 icon.addEventListener('click', () => {
@@ -159,7 +222,8 @@
                         'presence': 'presence-section',
                         'data-lives': 'data-lives-section',
                         'time': 'time-section',
-                        'create': 'create-section'
+                        'create': 'create-section',
+                        'cases': 'cases-section'
                     };
                     showScene(sectionMap[adventure]);
                 });
