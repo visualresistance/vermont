@@ -37,7 +37,7 @@ class TimelineScene {
         this.stage.add(this.layer);
 
         this.createTimeline();
-        this.createSampleItems(10);
+        this.loadDocuments();
         this.addZoomHandlers();
         this.createOverlay();
         
@@ -79,6 +79,72 @@ class TimelineScene {
         }
     }
 
+    async loadDocuments() {
+        try {
+            const response = await fetch('assets/documents/Timeline_Documents.csv');
+            const csvText = await response.text();
+            const documents = this.parseCSV(csvText);
+            
+            console.log('[TimelineScene] Loaded', documents.length, 'documents from CSV');
+            
+            // Create items from CSV documents
+            for (let i = 0; i < documents.length; i++) {
+                const doc = documents[i];
+                const year = parseInt(doc.Year);
+                const x = this.mapYearToX(year);
+                const y = (this.stage.height() / 2) + ((i % 2 === 0) ? -140 : 100);
+                const pdfPath = doc.ID ? `assets/documents/${doc.ID}.pdf` : null;
+                const item = await this.createDocumentItem(x, y, 160, 110, doc, i, pdfPath);
+                this.items.push(item);
+                this.layer.add(item.group);
+            }
+            
+            // Add some sample items to fill the timeline
+            const numSamples = 7;
+            const minYear = this.startYear - this.prePaddingYears;
+            const maxYear = this.endYear + this.postPaddingYears;
+            
+            for (let i = 0; i < numSamples; i++) {
+                const t = (i + 1) / (numSamples + 1);
+                const year = Math.round(minYear + t * (maxYear - minYear));
+                // Skip if year is too close to existing documents
+                const tooClose = documents.some(doc => Math.abs(parseInt(doc.Year) - year) < 5);
+                if (tooClose) continue;
+                
+                const x = this.mapYearToX(year);
+                const y = (this.stage.height() / 2) + ((i % 2 === 0) ? -140 : 100);
+                const item = this.createItem(x, y, 160, 110, `Sample ${i+1}`, year, i + documents.length);
+                this.items.push(item);
+                this.layer.add(item.group);
+            }
+            
+            this.layer.draw();
+        } catch (err) {
+            console.error('[TimelineScene] Error loading documents:', err);
+            // Fallback to sample items
+            this.createSampleItems(10);
+        }
+    }
+    
+    parseCSV(csvText) {
+        const lines = csvText.trim().split('\n');
+        if (lines.length < 2) return [];
+        
+        const headers = lines[0].split(',').map(h => h.trim());
+        const documents = [];
+        
+        for (let i = 1; i < lines.length; i++) {
+            const values = lines[i].split(',').map(v => v.trim());
+            const doc = {};
+            headers.forEach((header, index) => {
+                doc[header] = values[index] || '';
+            });
+            documents.push(doc);
+        }
+        
+        return documents;
+    }
+    
     createSampleItems(n) {
         const minYear = this.startYear - this.prePaddingYears;
         const maxYear = this.endYear + this.postPaddingYears;
@@ -95,6 +161,95 @@ class TimelineScene {
         }
 
         this.layer.draw();
+    }
+    
+    async createDocumentItem(x, y, w, h, doc, index, pdfPath) {
+        // Generate thumbnail from PDF
+        let img;
+        if (pdfPath) {
+            img = await this.generatePDFThumbnail(pdfPath, w, h);
+        } else {
+            img = this.makePlaceholderImage(doc.Source, doc.Year, w, h, index);
+        }
+        
+        const konvaImage = new Konva.Image({
+            x: x - w/2,
+            y: y - h/2,
+            image: img,
+            width: w,
+            height: h,
+            cornerRadius: 6,
+            shadowColor: 'black',
+            shadowBlur: 6,
+            shadowOpacity: 0.3
+        });
+
+        const label = new Konva.Text({
+            x: x - w/2,
+            y: y + h/2 + 6,
+            text: `${doc.Source} — ${doc.Year}`,
+            fontSize: 14,
+            fill: '#fff',
+            width: w,
+            align: 'center'
+        });
+
+        const group = new Konva.Group({ x: 0, y: 0, draggable: false });
+        group.add(konvaImage);
+        group.add(label);
+
+        // Click to open PDF viewer
+        konvaImage.on('click', () => {
+            if (pdfPath) {
+                this.showPDFOverlay(pdfPath, doc);
+            } else {
+                this.showOverlay(img.src || img, doc.Source, doc.Year);
+            }
+        });
+
+        return { group, konvaImage, label, meta: { ...doc, index, pdfPath } };
+    }
+    
+    async generatePDFThumbnail(pdfPath, width, height) {
+        try {
+            const pdf = await pdfjsLib.getDocument(pdfPath).promise;
+            const page = await pdf.getPage(1);
+            
+            const viewport = page.getViewport({ scale: 1 });
+            const scale = Math.min(width / viewport.width, height / viewport.height);
+            const scaledViewport = page.getViewport({ scale });
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const context = canvas.getContext('2d');
+            
+            // Fill background
+            context.fillStyle = '#fff';
+            context.fillRect(0, 0, width, height);
+            
+            // Center the PDF page
+            const offsetX = (width - scaledViewport.width) / 2;
+            const offsetY = (height - scaledViewport.height) / 2;
+            
+            context.save();
+            context.translate(offsetX, offsetY);
+            
+            await page.render({
+                canvasContext: context,
+                viewport: scaledViewport
+            }).promise;
+            
+            context.restore();
+            
+            const img = new Image();
+            img.src = canvas.toDataURL('image/png');
+            return img;
+        } catch (err) {
+            console.error('[TimelineScene] Error generating PDF thumbnail:', err);
+            // Return placeholder on error
+            return this.makePlaceholderImage('PDF', '', width, height, 0);
+        }
     }
 
     createItem(x, y, w, h, title, year, index) {
@@ -220,6 +375,51 @@ class TimelineScene {
         caption.style.marginTop = '12px';
         caption.textContent = `${title} — ${year}`;
         view.appendChild(caption);
+        this.overlay.style.display = 'flex';
+    }
+    
+    async showPDFOverlay(pdfPath, doc) {
+        if (!this.overlay) this.createOverlay();
+        const view = document.getElementById('doc-view');
+        view.innerHTML = '<div style="color:#fff;margin-bottom:20px;"><strong>' + doc.Source + '</strong> — ' + doc.Year + '</div>';
+        
+        if (doc.Description) {
+            const desc = document.createElement('div');
+            desc.style.color = '#ddd';
+            desc.style.marginBottom = '20px';
+            desc.style.fontSize = '14px';
+            desc.textContent = doc.Description;
+            view.appendChild(desc);
+        }
+        
+        try {
+            const pdf = await pdfjsLib.getDocument(pdfPath).promise;
+            
+            // Render all pages
+            for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                const page = await pdf.getPage(pageNum);
+                const viewport = page.getViewport({ scale: 1.5 });
+                
+                const canvas = document.createElement('canvas');
+                canvas.style.display = 'block';
+                canvas.style.margin = '10px auto';
+                canvas.style.border = '1px solid rgba(255,255,255,0.2)';
+                canvas.width = viewport.width;
+                canvas.height = viewport.height;
+                
+                const context = canvas.getContext('2d');
+                await page.render({
+                    canvasContext: context,
+                    viewport: viewport
+                }).promise;
+                
+                view.appendChild(canvas);
+            }
+        } catch (err) {
+            console.error('[TimelineScene] Error rendering PDF:', err);
+            view.innerHTML += '<div style="color:#f66;margin-top:20px;">Error loading PDF</div>';
+        }
+        
         this.overlay.style.display = 'flex';
     }
 
