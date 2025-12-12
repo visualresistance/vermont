@@ -17,18 +17,9 @@
         <div id="landing-page" class="scene active">
             <!-- Fullscreen split videos -->
             <div class="landing-videos">
-                <video id="landing-video-left" class="landing-video landing-video-left" autoplay loop muted playsinline>
-                    <source src="assets/media/walk-left.mp4" type="video/mp4">
-                    <source src="assets/media/walk-left.webp" type="video/webp">
-                </video>
-                <video id="landing-video-right" class="landing-video landing-video-right" autoplay loop muted playsinline>
-                    <source src="assets/media/walk-right.mp4" type="video/mp4">
-                    <source src="assets/media/walk-right.webp" type="video/webp">
-                </video>
-                
-                <!-- Placeholder canvases if videos don't load -->
-                <canvas id="placeholder-left" class="landing-video landing-video-left" width="1280" height="720"></canvas>
-                <canvas id="placeholder-right" class="landing-video landing-video-right" width="1280" height="720"></canvas>
+                <!-- Use canvas elements to display animated WebP -->
+                <canvas id="landing-video-left" class="landing-video landing-video-left" width="1280" height="720"></canvas>
+                <canvas id="landing-video-right" class="landing-video landing-video-right" width="1280" height="720"></canvas>
             </div>
             
             <!-- Centered lot boundary with animated point -->

@@ -31,10 +31,41 @@ const boundaryAnimation = {
         try {
             await this.loadPolygonFromGeoJSON();
             this.generateSVGPolygon();
-            this.createPlaceholders();
+            this.loadWebPCanvases();
             this.startAnimation();
         } catch (err) {
-            console.error('[BoundaryAnimation] Error loading GeoJSON:', err);
+            console.error('[BoundaryAnimation] Error:', err);
+        }
+    },
+    
+    loadWebPCanvases() {
+        const leftCanvas = document.getElementById('landing-video-left');
+        const rightCanvas = document.getElementById('landing-video-right');
+        
+        if (leftCanvas) {
+            const img = new Image();
+            img.onload = () => {
+                const ctx = leftCanvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                console.log('[BoundaryAnimation] Loaded left WebP animation');
+            };
+            img.onerror = () => {
+                console.warn('[BoundaryAnimation] Failed to load left WebP');
+            };
+            img.src = 'assets/media/walk-left.webp';
+        }
+        
+        if (rightCanvas) {
+            const img = new Image();
+            img.onload = () => {
+                const ctx = rightCanvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                console.log('[BoundaryAnimation] Loaded right WebP animation');
+            };
+            img.onerror = () => {
+                console.warn('[BoundaryAnimation] Failed to load right WebP');
+            };
+            img.src = 'assets/media/walk-right.webp';
         }
     },
     
