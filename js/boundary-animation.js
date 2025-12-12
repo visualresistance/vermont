@@ -1,40 +1,112 @@
 /**
  * Boundary Animation - Animates a point tracing the lot-boundary polygon
+ * Loads coordinates from lot-boundary.geojson
  * Syncs with split-screen walking videos
  */
 
 const boundaryAnimation = {
-    polygonPoints: [
-        { x: 250, y: 150 },   // top-left
-        { x: 750, y: 150 },   // top-right
-        { x: 850, y: 500 },   // right
-        { x: 750, y: 850 },   // bottom-right
-        { x: 250, y: 850 },   // bottom-left
-        { x: 150, y: 500 }    // left
-    ],
+    polygonPoints: [],
     
     point: null,
+    svgElement: null,
+    polygonElement: null,
     isRunning: false,
     animationFrameId: null,
     mockTime: 0,
     mockDuration: 20,
     startTime: null,
     
-    init() {
+    async init() {
         console.log('[BoundaryAnimation] Initializing...');
         
         this.point = document.getElementById('boundary-point');
+        this.svgElement = document.getElementById('lot-boundary-svg');
         
-        if (!this.point) {
-            console.warn('[BoundaryAnimation] Missing point element');
+        if (!this.point || !this.svgElement) {
+            console.warn('[BoundaryAnimation] Missing elements');
             return;
         }
         
-        // Create placeholder canvases
-        this.createPlaceholders();
+        // Load GeoJSON and extract polygon coordinates
+        try {
+            await this.loadPolygonFromGeoJSON();
+            this.generateSVGPolygon();
+            this.createPlaceholders();
+            this.startAnimation();
+        } catch (err) {
+            console.error('[BoundaryAnimation] Error loading GeoJSON:', err);
+        }
+    },
+    
+    async loadPolygonFromGeoJSON() {
+        try {
+            const response = await fetch('assets/data/lot-boundary.geojson');
+            const geojson = await response.json();
+            
+            // Extract coordinates from first feature
+            const feature = geojson.features[0];
+            const coordinates = feature.geometry.coordinates[0];
+            
+            // Convert from [lng, lat] to normalized [x, y] on a 1000x1000 viewBox
+            // First, find bounds
+            let minLng = Infinity, maxLng = -Infinity;
+            let minLat = Infinity, maxLat = -Infinity;
+            
+            for (const [lng, lat] of coordinates) {
+                minLng = Math.min(minLng, lng);
+                maxLng = Math.max(maxLng, lng);
+                minLat = Math.min(minLat, lat);
+                maxLat = Math.max(maxLat, lat);
+            }
+            
+            const lngRange = maxLng - minLng;
+            const latRange = maxLat - minLat;
+            const maxRange = Math.max(lngRange, latRange);
+            
+            // Normalize to 1000x1000 viewBox with padding
+            const padding = 50;
+            const viewBoxSize = 1000;
+            const scaledSize = viewBoxSize - 2 * padding;
+            
+            this.polygonPoints = coordinates.map(([lng, lat]) => {
+                const x = ((lng - minLng) / maxRange) * scaledSize + padding;
+                const y = ((maxLat - lat) / maxRange) * scaledSize + padding;
+                return { x, y };
+            });
+            
+            console.log('[BoundaryAnimation] Loaded', this.polygonPoints.length, 'polygon vertices');
+        } catch (err) {
+            console.error('[BoundaryAnimation] Failed to load GeoJSON:', err);
+            throw err;
+        }
+    },
+    
+    generateSVGPolygon() {
+        // Remove existing polygon if present
+        const existing = this.svgElement.querySelector('#lot-polygon-dynamic');
+        if (existing) existing.remove();
         
-        // Start animation
-        this.startAnimation();
+        // Create polygon points string
+        const pointsStr = this.polygonPoints
+            .map(p => `${p.x},${p.y}`)
+            .join(' ');
+        
+        // Create new polygon element
+        const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+        polygon.setAttribute('id', 'lot-polygon-dynamic');
+        polygon.setAttribute('points', pointsStr);
+        polygon.setAttribute('fill', 'rgba(0,0,0,0.2)');
+        polygon.setAttribute('stroke', '#64c8ff');
+        polygon.setAttribute('stroke-width', '4');
+        polygon.setAttribute('filter', 'url(#glow)');
+        
+        // Insert before the point
+        const point = this.svgElement.querySelector('#boundary-point');
+        if (point && point.parentNode) {
+            point.parentNode.insertBefore(polygon, point);
+        }
+        
+        console.log('[BoundaryAnimation] Generated SVG polygon');
     },
     
     createPlaceholders() {
