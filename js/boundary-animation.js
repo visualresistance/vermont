@@ -21,6 +21,8 @@ const boundaryAnimation = {
         
         this.point = document.getElementById('boundary-point');
         this.svgElement = document.getElementById('lot-boundary-svg');
+        this.videoLeft = document.getElementById('landing-video-left');
+        this.videoRight = document.getElementById('landing-video-right');
         
         if (!this.point || !this.svgElement) {
             console.warn('[BoundaryAnimation] Missing elements');
@@ -31,41 +33,28 @@ const boundaryAnimation = {
         try {
             await this.loadPolygonFromGeoJSON();
             this.generateSVGPolygon();
-            this.loadWebPCanvases();
+            this.setupVideoSync();
             this.startAnimation();
         } catch (err) {
             console.error('[BoundaryAnimation] Error:', err);
         }
     },
     
-    loadWebPCanvases() {
-        const leftCanvas = document.getElementById('landing-video-left');
-        const rightCanvas = document.getElementById('landing-video-right');
-        
-        if (leftCanvas) {
-            const img = new Image();
-            img.onload = () => {
-                const ctx = leftCanvas.getContext('2d');
-                ctx.drawImage(img, 0, 0);
-                console.log('[BoundaryAnimation] Loaded left WebP animation');
-            };
-            img.onerror = () => {
-                console.warn('[BoundaryAnimation] Failed to load left WebP');
-            };
-            img.src = 'assets/media/walk-left.webp';
+    setupVideoSync() {
+        // Set mock duration from video if available
+        if (this.videoLeft && !isNaN(this.videoLeft.duration) && this.videoLeft.duration > 0) {
+            this.mockDuration = this.videoLeft.duration;
+            console.log('[BoundaryAnimation] Syncing to video duration:', this.mockDuration);
         }
         
-        if (rightCanvas) {
-            const img = new Image();
-            img.onload = () => {
-                const ctx = rightCanvas.getContext('2d');
-                ctx.drawImage(img, 0, 0);
-                console.log('[BoundaryAnimation] Loaded right WebP animation');
-            };
-            img.onerror = () => {
-                console.warn('[BoundaryAnimation] Failed to load right WebP');
-            };
-            img.src = 'assets/media/walk-right.webp';
+        // Listen for video metadata loaded
+        if (this.videoLeft) {
+            this.videoLeft.addEventListener('loadedmetadata', () => {
+                if (!isNaN(this.videoLeft.duration) && this.videoLeft.duration > 0) {
+                    this.mockDuration = this.videoLeft.duration;
+                    console.log('[BoundaryAnimation] Video duration set:', this.mockDuration);
+                }
+            });
         }
     },
     
@@ -183,13 +172,22 @@ const boundaryAnimation = {
     },
     
     animate() {
-        // Calculate elapsed time for mock video
-        const now = performance.now();
-        const elapsed = (now - this.startTime) / 1000;
-        this.mockTime = elapsed % this.mockDuration;
+        // Try to use actual video time if available, otherwise use mock timer
+        let currentTime = 0;
+        let duration = this.mockDuration;
+        
+        if (this.videoLeft && !isNaN(this.videoLeft.currentTime) && !isNaN(this.videoLeft.duration)) {
+            currentTime = this.videoLeft.currentTime;
+            duration = this.videoLeft.duration || this.mockDuration;
+        } else {
+            // Fallback to mock timer
+            const now = performance.now();
+            const elapsed = (now - this.startTime) / 1000;
+            currentTime = elapsed % this.mockDuration;
+        }
         
         // Get position on polygon path
-        const progress = this.mockTime / this.mockDuration;
+        const progress = (currentTime % duration) / duration;
         const { x, y } = this.getPointOnPath(progress);
         
         // Update SVG point position
