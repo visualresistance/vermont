@@ -36,48 +36,125 @@ body {
     z-index: 1000 !important;
 }
 
-/* Landing Page */
+/* Landing Page - Immersive fullscreen */
 #landing-page {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+    position: relative;
+    overflow: hidden;
     background: #000;
 }
 
 #landing-page.active {
     z-index: 1 !important;
-    display: flex !important;
+    display: block !important;
 }
 
-#lot-polygon {
-    width: 300px;
-    height: 300px;
-    margin-bottom: 40px;
-    filter: drop-shadow(0 0 20px rgba(100, 200, 255, 0.3));
+/* Fullscreen split videos */
+.landing-videos {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    z-index: 1;
+}
+
+.landing-video {
+    width: 50%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.7;
+    display: none;
+}
+
+.landing-video-left {
+    object-position: center right;
+}
+
+.landing-video-right {
+    object-position: center left;
+}
+
+/* Overlay with lot boundary and title */
+.landing-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    pointer-events: none;
 }
 
 #lot-boundary-svg {
-    width: 300px;
-    height: 300px;
+    width: min(500px, 50vh);
+    height: min(500px, 50vh);
+    margin-bottom: 30px;
 }
 
-#landing-page h1 {
-    font-size: 48px;
+.landing-title {
+    text-align: center;
+}
+
+.landing-title h1 {
+    font-size: 56px;
     font-weight: 700;
     color: #fff;
     text-align: center;
-    margin-bottom: 16px;
-    letter-spacing: 1px;
+    margin-bottom: 12px;
+    letter-spacing: 2px;
+    text-shadow: 0 0 20px rgba(0, 0, 0, 0.8), 0 0 40px rgba(0, 0, 0, 0.5);
 }
 
-#landing-page p {
-    font-size: 20px;
-    color: #aaa;
+.landing-title p {
+    font-size: 18px;
+    color: #ddd;
     text-align: center;
-    margin-bottom: 60px;
     max-width: 600px;
     line-height: 1.6;
+    text-shadow: 0 0 10px rgba(0, 0, 0, 0.9);
+}
+
+/* Landing page icons - subtle and glowing */
+.landing-icon {
+    opacity: 0.6;
+    transition: opacity 0.3s ease, filter 0.3s ease;
+    pointer-events: auto !important;
+}
+
+.landing-icon:hover {
+    opacity: 1;
+    filter: drop-shadow(0 0 15px rgba(100, 200, 255, 0.8));
+}
+
+.landing-icon .icon-symbol {
+    border-color: rgba(100, 200, 255, 0.6);
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.landing-icon:hover .icon-symbol {
+    border-color: #64c8ff;
+    background: rgba(100, 200, 255, 0.1);
+}
+
+/* Pulsing animation for boundary point */
+.pulsing {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        r: 12px;
+        opacity: 1;
+    }
+    50% {
+        r: 16px;
+        opacity: 0.7;
+    }
 }
 
 .adventure-icons {
@@ -98,41 +175,59 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 12px;
+    gap: 10px;
     cursor: pointer;
     pointer-events: auto;
-    transition: transform 0.3s ease, filter 0.3s ease;
+    position: absolute;
+    z-index: 10;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    opacity: 0.6;
+    animation: pulse 3s ease-in-out infinite;
 }
 
 .adventure-icon:hover {
-    transform: scale(1.1);
-    filter: drop-shadow(0 0 10px rgba(100, 200, 255, 0.5));
+    transform: scale(1.15);
+    opacity: 1;
+    animation: none;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 0.6;
+    }
+    50% {
+        opacity: 0.9;
+    }
 }
 
 .icon-symbol {
-    width: 60px;
-    height: 60px;
+    width: 50px;
+    height: 50px;
     border: 2px solid #fff;
-    border-radius: 12px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 32px;
+    font-size: 26px;
     color: #fff;
-    transition: background 0.3s ease;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+    transition: background 0.3s ease, box-shadow 0.3s ease;
 }
 
 .adventure-icon:hover .icon-symbol {
-    background: rgba(100, 200, 255, 0.2);
+    background: rgba(100, 200, 255, 0.3);
+    box-shadow: 0 0 20px rgba(100, 200, 255, 0.6);
 }
 
 .icon-label {
-    font-size: 14px;
-    color: #aaa;
+    font-size: 12px;
+    color: #fff;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 1px;
     transition: color 0.3s ease;
+    text-shadow: 0 0 8px rgba(0, 0, 0, 0.9);
 }
 
 .adventure-icon:hover .icon-label {
