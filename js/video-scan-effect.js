@@ -1,8 +1,8 @@
 /**
  * Video Scan Effect
- * Creates individual horizontal scanning lines that appear and move across the video
- * Lines appear one at a time from bottom, move up on left side, down on right side
- * Pattern: Start black → lines appear from bottom → move up left → move down right → repeat
+ * Reveals video content line by line with alternating gaps
+ * Pattern: 7 lines of video → 7 lines of black → repeat, scrolling up then down
+ * Uses a single video for the entire landing page
  */
 
 class VideoScanEffect {
@@ -12,8 +12,8 @@ class VideoScanEffect {
     this.ctx = this.canvas.getContext('2d');
     this.animationStartTime = null;
     this.animationDuration = 30000; // 30 seconds for full cycle
-    this.numLines = 7;
-    this.lineHeight = 2; // Thickness of each line
+    this.linesPerBand = 7; // 7 lines of video, then 7 lines of black
+    this.lineHeight = 2; // Height of each line in pixels
     this.isAnimating = true;
     
     // Set canvas size to match video
@@ -33,119 +33,79 @@ class VideoScanEffect {
     }
   }
 
-  getLinePositions(progress) {
+  getRevealPattern(progress) {
     // progress: 0 to 1 over 30 seconds
-    // Returns object with { positions: [], phase: 'string' }
-    // Positions are normalized y values (0 = top, 1 = bottom)
+    // Returns which lines should be visible as video vs black
+    // Each "band" is 14 lines (7 video + 7 black)
     
     const cycleProgress = progress % 1.0;
-    const result = {
-      positions: [],
-      phase: 'reset',
-      showLeft: false,
-      showRight: false
-    };
     
-    // Timeline for the effect:
-    // 0.0-0.10: Lines appear one by one from bottom (no movement yet)
-    // 0.10-0.50: All 7 lines move upward together (showing on left)
-    // 0.50-0.90: All 7 lines move downward together (showing on right)
-    // 0.90-1.0: Reset to black
+    // Timeline:
+    // 0.0-0.50: Scroll upward on left side
+    // 0.50-1.0: Scroll downward on right side
     
-    if (cycleProgress < 0.10) {
-      // Phase 1: Lines appear one by one from bottom
-      result.phase = 'appear';
-      const appearProgress = cycleProgress / 0.10; // 0 to 1
-      const numVisibleLines = Math.floor(appearProgress * (this.numLines + 1));
-      
-      // All appearing lines start at bottom
-      for (let i = 0; i < numVisibleLines && i < this.numLines; i++) {
-        result.positions.push(1.0); // 1.0 = bottom
-      }
-      result.showLeft = true;
-    } else if (cycleProgress < 0.50) {
-      // Phase 2: Lines move upward on left side
-      result.phase = 'move-up';
-      const moveProgress = (cycleProgress - 0.10) / 0.40; // 0 to 1
-      
-      // All 7 lines are visible and moving upward
-      // Start at bottom (1.0), move to top (0.0)
-      const upwardPos = 1.0 - moveProgress;
-      
-      for (let i = 0; i < this.numLines; i++) {
-        result.positions.push(upwardPos);
-      }
-      result.showLeft = true;
-    } else if (cycleProgress < 0.90) {
-      // Phase 3: Lines move downward on right side
-      result.phase = 'move-down';
-      const moveProgress = (cycleProgress - 0.50) / 0.40; // 0 to 1
-      
-      // All 7 lines are visible and moving downward
-      // Start at top (0.0), move to bottom (1.0)
-      const downwardPos = moveProgress;
-      
-      for (let i = 0; i < this.numLines; i++) {
-        result.positions.push(downwardPos);
-      }
-      result.showRight = true;
+    let scrollProgress; // 0 to 1 for current scroll
+    let isLeftSide = true;
+    
+    if (cycleProgress < 0.50) {
+      // Left side, scrolling up
+      scrollProgress = cycleProgress / 0.50;
+      isLeftSide = true;
     } else {
-      // Phase 4: Reset (all black)
-      result.phase = 'reset';
+      // Right side, scrolling down
+      scrollProgress = (cycleProgress - 0.50) / 0.50;
+      isLeftSide = false;
     }
     
-    return result;
+    // Calculate how many pixels to offset (scroll)
+    // Total scroll distance is the canvas height
+    const scrollPixels = scrollProgress * this.canvas.height;
+    
+    return {
+      scrollPixels,
+      isLeftSide,
+      scrollProgress
+    };
   }
 
-  drawLines(progress) {
-    // Start with full black canvas
+  isLineVisible(lineY, scrollPixels, isLeftSide) {
+    // Determine if this line should show video or be black
+    // Lines are in 14-line bands: 7 video, 7 black
+    
+    // Calculate which band this line falls into after scrolling
+    const adjustedY = (lineY + scrollPixels) % (this.canvas.height);
+    
+    // Within the canvas, determine the pattern
+    // Each band is 14 lines (7 video + 7 black)
+    const bandSize = this.linesPerBand * 2; // 14
+    const positionInBand = Math.floor(adjustedY / this.lineHeight) % bandSize;
+    
+    // First 7 lines (0-6) are video, next 7 (7-13) are black
+    return positionInBand < this.linesPerBand;
+  }
+
+  drawReveal(progress) {
+    // Start with all black
     this.ctx.fillStyle = '#000000';
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     
-    // Get line positions and phase info
-    const lineData = this.getLinePositions(progress);
+    // Get the reveal pattern
+    const pattern = this.getRevealPattern(progress);
     
-    if (lineData.positions.length === 0) {
-      // Reset phase - just black
-      return;
+    // Draw the video
+    if (this.videoElement.readyState >= 2) {
+      this.ctx.drawImage(this.videoElement, 0, 0, this.canvas.width, this.canvas.height);
     }
     
-    // Draw video on the side where lines are
-    if (lineData.showLeft) {
-      // Show video on left half only
-      this.ctx.save();
-      this.ctx.beginPath();
-      this.ctx.rect(0, 0, this.canvas.width / 2, this.canvas.height);
-      this.ctx.clip();
-      if (this.videoElement.readyState >= 2) {
-        this.ctx.drawImage(this.videoElement, 0, 0, this.canvas.width, this.canvas.height);
-      }
-      this.ctx.restore();
-    } else if (lineData.showRight) {
-      // Show video on right half only
-      this.ctx.save();
-      this.ctx.beginPath();
-      this.ctx.rect(this.canvas.width / 2, 0, this.canvas.width / 2, this.canvas.height);
-      this.ctx.clip();
-      if (this.videoElement.readyState >= 2) {
-        this.ctx.drawImage(this.videoElement, 0, 0, this.canvas.width, this.canvas.height);
-      }
-      this.ctx.restore();
-    }
+    // Now mask with black lines to create the reveal effect
+    this.ctx.fillStyle = '#000000';
     
-    // Draw the horizontal lines as bright white lines
-    this.ctx.strokeStyle = '#ffffff';
-    this.ctx.lineWidth = this.lineHeight;
-    this.ctx.lineCap = 'round';
-    
-    for (let i = 0; i < lineData.positions.length; i++) {
-      const normalizedY = lineData.positions[i];
-      const yPos = normalizedY * this.canvas.height;
-      
-      this.ctx.beginPath();
-      this.ctx.moveTo(0, yPos);
-      this.ctx.lineTo(this.canvas.width, yPos);
-      this.ctx.stroke();
+    // Draw horizontal lines of black based on the pattern
+    for (let y = 0; y < this.canvas.height; y += this.lineHeight) {
+      if (!this.isLineVisible(y, pattern.scrollPixels, pattern.isLeftSide)) {
+        // This line should be black
+        this.ctx.fillRect(0, y, this.canvas.width, this.lineHeight);
+      }
     }
   }
 
@@ -170,8 +130,8 @@ class VideoScanEffect {
       this.updateCanvasSize();
     }
 
-    // Draw the effect
-    this.drawLines(progress);
+    // Draw the reveal effect
+    this.drawReveal(progress);
 
     requestAnimationFrame(this.animate);
   }
@@ -199,24 +159,14 @@ if (document.readyState === 'loading') {
 }
 
 function initVideoScanEffects() {
-  const videoLeftEl = document.getElementById('video-left');
-  const videoRightEl = document.getElementById('video-right');
-  const canvasLeftEl = document.getElementById('canvas-left');
-  const canvasRightEl = document.getElementById('canvas-right');
+  const videoEl = document.getElementById('video-main');
+  const canvasEl = document.getElementById('canvas-scan');
 
-  if (videoLeftEl && canvasLeftEl) {
-    window.scanEffectLeft = new VideoScanEffect(videoLeftEl, canvasLeftEl);
+  if (videoEl && canvasEl) {
+    window.scanEffect = new VideoScanEffect(videoEl, canvasEl);
     // Start scan when video is ready
-    videoLeftEl.addEventListener('loadedmetadata', () => {
-      window.scanEffectLeft.start();
-    });
-  }
-
-  if (videoRightEl && canvasRightEl) {
-    window.scanEffectRight = new VideoScanEffect(videoRightEl, canvasRightEl);
-    // Start scan when video is ready
-    videoRightEl.addEventListener('loadedmetadata', () => {
-      window.scanEffectRight.start();
+    videoEl.addEventListener('loadedmetadata', () => {
+      window.scanEffect.start();
     });
   }
 }

@@ -15,24 +15,14 @@
     <div id="app">
         <!-- Landing Page -->
         <div id="landing-page" class="scene active">
-            <!-- Fullscreen split videos -->
+            <!-- Fullscreen video with scanning reveal effect -->
             <div class="landing-videos">
-                <div class="video-container video-container-left">
-                    <video id="video-left" class="landing-video landing-video-left" autoplay loop muted playsinline>
-                        <source src="assets/media/walk-left.mov" type="video/mp4">
-                        <source src="assets/media/walk-left.m4v" type="video/mp4">
-                        <source src="assets/media/walk-left.mp4" type="video/mp4">
-                    </video>
-                    <canvas id="canvas-left" class="video-scan-canvas video-scan-left"></canvas>
-                </div>
-                <div class="video-container video-container-right">
-                    <video id="video-right" class="landing-video landing-video-right" autoplay loop muted playsinline>
-                        <source src="assets/media/walk-right.mov" type="video/mp4">
-                        <source src="assets/media/walk-right.m4v" type="video/mp4">
-                        <source src="assets/media/walk-right.mp4" type="video/mp4">
-                    </video>
-                    <canvas id="canvas-right" class="video-scan-canvas video-scan-right"></canvas>
-                </div>
+                <video id="video-main" class="landing-video-main" autoplay loop muted playsinline>
+                    <source src="assets/media/walk-right.mov" type="video/mp4">
+                    <source src="assets/media/walk-right.m4v" type="video/mp4">
+                    <source src="assets/media/walk-right.mp4" type="video/mp4">
+                </video>
+                <canvas id="canvas-scan" class="video-scan-canvas-main"></canvas>
             </div>
             
             <!-- Centered lot boundary with animated point -->
