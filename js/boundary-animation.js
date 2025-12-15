@@ -13,7 +13,7 @@ const boundaryAnimation = {
     isRunning: false,
     animationFrameId: null,
     mockTime: 0,
-    mockDuration: 180,
+    mockDuration: 600,
     startTime: null,
     
     async init() {
@@ -40,21 +40,9 @@ const boundaryAnimation = {
     },
     
     setupVideoSync() {
-        // Set mock duration from video if available
-        if (this.videoLeft && !isNaN(this.videoLeft.duration) && this.videoLeft.duration > 0) {
-            this.mockDuration = this.videoLeft.duration;
-            console.log('[BoundaryAnimation] Syncing to video duration:', this.mockDuration);
-        }
-        
-        // Listen for video metadata loaded
-        if (this.videoLeft) {
-            this.videoLeft.addEventListener('loadedmetadata', () => {
-                if (!isNaN(this.videoLeft.duration) && this.videoLeft.duration > 0) {
-                    this.mockDuration = this.videoLeft.duration;
-                    console.log('[BoundaryAnimation] Video duration set:', this.mockDuration);
-                }
-            });
-        }
+        // Don't sync to video duration - use the custom mockDuration instead
+        // This allows independent control of the boundary animation speed
+        console.log('[BoundaryAnimation] Using custom duration:', this.mockDuration);
     },
     
     async loadPolygonFromGeoJSON() {
