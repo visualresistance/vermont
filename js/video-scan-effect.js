@@ -1,8 +1,7 @@
 /**
- * Video Scan Effect
- * Reveals video content in solid bands: 7 lines of video, then 7 lines of black
- * Pattern scrolls upward on left side, then downward on right side
- * Starts from completely black screen
+ * Video Scan Effect - Matrix Falling Pixels (Full Screen)
+ * Creates a Matrix-like effect with falling pixelated video blocks across entire screen
+ * Pixels gradually disappear to reveal clearer video, then reappear to break it up again
  */
 
 class VideoScanEffect {
@@ -11,14 +10,23 @@ class VideoScanEffect {
     this.canvas = canvasElement;
     this.ctx = this.canvas.getContext('2d');
     this.animationStartTime = null;
-    this.animationDuration = 30000; // 30 seconds for full cycle
-    this.bandHeight = 7; // 7 lines per solid band
-    this.lineHeight = 1; // Height of each line in pixels
-    this.side = side; // 'left' or 'right'
+    this.animationDuration = 60000; // 60 seconds for full cycle (disappear and reappear)
+    this.side = side;
     this.isAnimating = true;
+    
+    // Pixel settings
+    this.pixelSize = 8;
+    this.fallSpeed = 0.3; // Very slow fall speed
+    this.columnDelay = 50; // Faster activation across screen
+    
+    // Track falling pixels for each column
+    this.columns = [];
     
     // Set canvas size to match video
     this.updateCanvasSize();
+    
+    // Initialize columns
+    this.initColumns();
     
     // Start animation loop
     this.animate();
@@ -34,90 +42,108 @@ class VideoScanEffect {
     }
   }
 
-  getScrollProgress(progress) {
-    // progress: 0 to 1 over 30 seconds
-    // Returns scroll progress based on which side we're on
+  initColumns() {
+    const numColumns = Math.ceil(this.canvas.width / this.pixelSize);
+    this.columns = [];
     
-    const cycleProgress = progress % 1.0;
-    
-    if (this.side === 'left') {
-      // Left side: use first 50% of cycle for scrolling up
-      if (cycleProgress < 0.5) {
-        return cycleProgress / 0.5; // 0 to 1
-      } else {
-        return 1.0; // Stay at top when right side is moving
-      }
-    } else {
-      // Right side: use second 50% of cycle for scrolling down
-      if (cycleProgress >= 0.5) {
-        return (cycleProgress - 0.5) / 0.5; // 0 to 1
-      } else {
-        return 0.0; // Stay at top while left side is moving
-      }
+    for (let i = 0; i < numColumns; i++) {
+      this.columns.push({
+        x: i * this.pixelSize,
+        pixels: [],
+        active: false,
+        activationTime: i * this.columnDelay
+      });
     }
   }
 
-  drawReveal(progress) {
-    // Start with all black
-    this.ctx.fillStyle = '#000000';
-    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+  getPixelDensity(progress) {
+    // progress: 0 to 1 over 60 seconds
+    // 0-0.5: Pixels gradually increase (density goes from 0.2 to 1.0) - more pixels reveal video
+    // 0.5-1.0: Pixels gradually decrease (density goes from 1.0 to 0.2) - fewer pixels, more abstract
     
-    // Get scroll progress for this side
-    const scrollProgress = this.getScrollProgress(progress);
-    
-    // Check if this side should be active
-    const cycleProgress = progress % 1.0;
-    let isActive = false;
-    
-    if (this.side === 'left' && cycleProgress < 0.5) {
-      isActive = true;
-    } else if (this.side === 'right' && cycleProgress >= 0.5) {
-      isActive = true;
+    if (progress < 0.5) {
+      // Increasing pixel phase - start sparse, get dense
+      return 0.2 + (progress * 2 * 0.8); // 0.2 → 1.0
+    } else {
+      // Decreasing pixel phase - dense back to sparse
+      return 1.0 - ((progress - 0.5) * 2 * 0.8); // 1.0 → 0.2
     }
-    
-    // If this side isn't active, keep it black
-    if (!isActive) {
+  }
+
+  updateColumns(elapsed, density) {
+    // Activate columns from left to right over time
+    this.columns.forEach(col => {
+      if (!col.active && elapsed >= col.activationTime) {
+        col.active = true;
+        // Start first pixel at top
+        col.pixels.push({
+          y: -this.pixelSize * Math.random() * 5,
+          speed: this.fallSpeed * (0.8 + Math.random() * 0.4)
+        });
+      }
+      
+      if (col.active) {
+        // Update falling pixels
+        col.pixels = col.pixels.filter(pixel => {
+          pixel.y += pixel.speed;
+          
+          // Wrap around when reaching bottom
+          if (pixel.y > this.canvas.height) {
+            pixel.y = -this.pixelSize * (2 + Math.random() * 3);
+          }
+          
+          return true;
+        });
+        
+        // Vary pixel spawn rate based on density - less random for smoother effect
+        const spawnChance = 0.015 * density;
+        const maxPixels = Math.ceil(15 * density);
+        
+        if (Math.random() < spawnChance && col.pixels.length < maxPixels) {
+          col.pixels.push({
+            y: -this.pixelSize * (2 + Math.random() * 3),
+            speed: this.fallSpeed * (0.9 + Math.random() * 0.2) // Less speed variation
+          });
+        }
+      }
+    });
+  }
+
+  drawMatrixEffect(progress, density) {
+    // Draw full video as base
+    if (this.videoElement.readyState < 2) {
+      this.ctx.fillStyle = '#000000';
+      this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
       return;
     }
     
-    // For a "start at lower left and scroll up", we need to calculate which bands are visible
-    // Total canvas height divided by band size (7 video + 7 black = 14 lines)
-    const totalBandSize = this.bandHeight * 2; // 14 lines per complete cycle
-    const pixelsPerLine = this.canvas.height / (this.bandHeight * 20); // Approximate line height
+    // Draw the full video
+    this.ctx.drawImage(this.videoElement, 0, 0, this.canvas.width, this.canvas.height);
     
-    // Calculate scroll offset
-    // Start at bottom, scroll upward to top
-    let scrollPixels;
-    if (this.side === 'left') {
-      // Left: scroll from bottom (positive) to top (negative)
-      scrollPixels = (1 - scrollProgress) * this.canvas.height;
-    } else {
-      // Right: scroll from top (0) to bottom (positive)
-      scrollPixels = scrollProgress * this.canvas.height;
-    }
-    
-    // Draw the video
-    if (this.videoElement.readyState >= 2) {
-      this.ctx.drawImage(this.videoElement, 0, 0, this.canvas.width, this.canvas.height);
-    }
-    
-    // Now mask with black to create the band effect
-    // Calculate which bands should be black based on scroll position
+    // Overlay black everywhere
     this.ctx.fillStyle = '#000000';
+    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     
-    const pixelHeight = this.canvas.height / (this.bandHeight * 20); // Estimate pixels per line
-    
-    // Draw black bands (masking out video)
-    for (let y = 0; y < this.canvas.height; y += this.lineHeight) {
-      // Calculate which band this y position falls into
-      const adjustedY = (y + scrollPixels) % (this.canvas.height * 2);
-      const bandSize = this.canvas.height / (this.bandHeight * 2);
-      const positionInBand = (adjustedY / bandSize) % (this.bandHeight * 2);
+    // Draw only the falling pixel blocks to reveal video
+    this.columns.forEach(col => {
+      if (!col.active) return;
       
-      // First 7 units are video, next 7 are black
-      if (positionInBand >= this.bandHeight) {
-        this.ctx.fillRect(0, y, this.canvas.width, this.lineHeight);
-      }
+      col.pixels.forEach(pixel => {
+        // Sample and draw video at this pixel location
+        this.ctx.drawImage(
+          this.videoElement,
+          col.x, pixel.y, this.pixelSize, this.pixelSize,
+          col.x, pixel.y, this.pixelSize, this.pixelSize
+        );
+      });
+    });
+    
+    // When density is high (near 1.0), show more of the full video underneath
+    if (density > 0.7) {
+      const videoAlpha = (density - 0.7) / 0.3; // 0 to 1 as density goes from 0.7 to 1.0
+      this.ctx.globalAlpha = videoAlpha * 0.6;
+      this.ctx.drawImage(this.videoElement, 0, 0, this.canvas.width, this.canvas.height);
+      this.ctx.globalAlpha = 1.0;
     }
   }
 
@@ -140,10 +166,17 @@ class VideoScanEffect {
     if (this.videoElement.videoWidth && 
         this.canvas.width !== this.videoElement.videoWidth) {
       this.updateCanvasSize();
+      this.initColumns();
     }
 
-    // Draw the reveal effect
-    this.drawReveal(progress);
+    // Calculate current pixel density
+    const density = this.getPixelDensity(progress);
+
+    // Update column states
+    this.updateColumns(elapsed, density);
+
+    // Draw the matrix effect
+    this.drawMatrixEffect(progress, density);
 
     requestAnimationFrame(this.animate);
   }
@@ -155,11 +188,13 @@ class VideoScanEffect {
   start() {
     this.isAnimating = true;
     this.animationStartTime = null;
+    this.initColumns();
     this.animate();
   }
 
   reset() {
     this.animationStartTime = null;
+    this.initColumns();
   }
 }
 
@@ -171,22 +206,13 @@ if (document.readyState === 'loading') {
 }
 
 function initVideoScanEffects() {
-  const videoLeftEl = document.getElementById('video-left');
-  const videoRightEl = document.getElementById('video-right');
-  const canvasLeftEl = document.getElementById('canvas-left');
-  const canvasRightEl = document.getElementById('canvas-right');
+  const videoEl = document.getElementById('video-main');
+  const canvasEl = document.getElementById('canvas-main');
 
-  if (videoLeftEl && canvasLeftEl) {
-    window.scanEffectLeft = new VideoScanEffect(videoLeftEl, canvasLeftEl, 'left');
-    videoLeftEl.addEventListener('loadedmetadata', () => {
-      window.scanEffectLeft.start();
-    });
-  }
-
-  if (videoRightEl && canvasRightEl) {
-    window.scanEffectRight = new VideoScanEffect(videoRightEl, canvasRightEl, 'right');
-    videoRightEl.addEventListener('loadedmetadata', () => {
-      window.scanEffectRight.start();
+  if (videoEl && canvasEl) {
+    window.scanEffect = new VideoScanEffect(videoEl, canvasEl, 'full');
+    videoEl.addEventListener('loadedmetadata', () => {
+      window.scanEffect.start();
     });
   }
 }
