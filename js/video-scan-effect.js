@@ -65,6 +65,21 @@ class VideoScanEffect {
     // Get scroll progress for this side
     const scrollProgress = this.getScrollProgress(progress);
     
+    // Check if this side should be active
+    const cycleProgress = progress % 1.0;
+    let isActive = false;
+    
+    if (this.side === 'left' && cycleProgress < 0.5) {
+      isActive = true;
+    } else if (this.side === 'right' && cycleProgress >= 0.5) {
+      isActive = true;
+    }
+    
+    // If this side isn't active, keep it black
+    if (!isActive) {
+      return;
+    }
+    
     // For a "start at lower left and scroll up", we need to calculate which bands are visible
     // Total canvas height divided by band size (7 video + 7 black = 14 lines)
     const totalBandSize = this.bandHeight * 2; // 14 lines per complete cycle

@@ -13,7 +13,7 @@ const boundaryAnimation = {
     isRunning: false,
     animationFrameId: null,
     mockTime: 0,
-    mockDuration: 20,
+    mockDuration: 60,
     startTime: null,
     
     async init() {
