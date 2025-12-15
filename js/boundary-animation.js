@@ -159,22 +159,13 @@ const boundaryAnimation = {
     },
     
     animate() {
-        // Try to use actual video time if available, otherwise use mock timer
-        let currentTime = 0;
-        let duration = this.mockDuration;
-        
-        if (this.videoLeft && !isNaN(this.videoLeft.currentTime) && !isNaN(this.videoLeft.duration)) {
-            currentTime = this.videoLeft.currentTime;
-            duration = this.videoLeft.duration || this.mockDuration;
-        } else {
-            // Fallback to mock timer
-            const now = performance.now();
-            const elapsed = (now - this.startTime) / 1000;
-            currentTime = elapsed % this.mockDuration;
-        }
+        // Use custom mock timer for slow animation
+        const now = performance.now();
+        const elapsed = (now - this.startTime) / 1000;
+        const currentTime = elapsed % this.mockDuration;
         
         // Get position on polygon path
-        const progress = (currentTime % duration) / duration;
+        const progress = currentTime / this.mockDuration;
         const { x, y } = this.getPointOnPath(progress);
         
         // Update SVG point position
