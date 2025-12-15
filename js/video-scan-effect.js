@@ -22,14 +22,76 @@ class VideoScanEffect {
     // Track falling pixels for each column
     this.columns = [];
     
+    // Polygon exclusion zone (will be populated from boundary animation)
+    this.polygonBounds = null;
+    
     // Set canvas size to match video
     this.updateCanvasSize();
     
     // Initialize columns
     this.initColumns();
     
+    // Get polygon bounds for exclusion
+    this.initPolygonExclusion();
+    
     // Start animation loop
     this.animate();
+  }
+
+  initPolygonExclusion() {
+    // Wait for boundary animation to load, then get polygon coordinates
+    const checkBoundary = () => {
+      if (window.boundaryAnimation && window.boundaryAnimation.polygonPoints && window.boundaryAnimation.polygonPoints.length > 0) {
+        this.polygonBounds = this.calculatePolygonScreenBounds(window.boundaryAnimation.polygonPoints);
+        console.log('[VideoScanEffect] Polygon exclusion zone set:', this.polygonBounds);
+      } else {
+        setTimeout(checkBoundary, 100);
+      }
+    };
+    checkBoundary();
+  }
+
+  calculatePolygonScreenBounds(svgPoints) {
+    // Get SVG element to calculate screen position
+    const svgElement = document.getElementById('lot-boundary-svg');
+    if (!svgElement) return null;
+
+    const svgRect = svgElement.getBoundingClientRect();
+    const viewBoxSize = 1000; // SVG viewBox is 0 0 1000 1000
+    
+    // Scale factor from SVG coordinates to screen pixels
+    const scaleX = svgRect.width / viewBoxSize;
+    const scaleY = svgRect.height / viewBoxSize;
+    
+    // Convert SVG polygon points to screen coordinates
+    const screenPoints = svgPoints.map(p => ({
+      x: svgRect.left + (p.x * scaleX),
+      y: svgRect.top + (p.y * scaleY)
+    }));
+    
+    return {
+      points: screenPoints,
+      svgRect: svgRect
+    };
+  }
+
+  isPointInPolygon(x, y) {
+    if (!this.polygonBounds) return false;
+    
+    const points = this.polygonBounds.points;
+    let inside = false;
+    
+    // Ray casting algorithm for point-in-polygon test
+    for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
+      const xi = points[i].x, yi = points[i].y;
+      const xj = points[j].x, yj = points[j].y;
+      
+      const intersect = ((yi > y) !== (yj > y))
+        && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+      if (intersect) inside = !inside;
+    }
+    
+    return inside;
   }
 
   updateCanvasSize() {
@@ -129,6 +191,11 @@ class VideoScanEffect {
       if (!col.active) return;
       
       col.pixels.forEach(pixel => {
+        // Skip if pixel is inside the polygon exclusion zone
+        if (this.isPointInPolygon(col.x + this.pixelSize/2, pixel.y + this.pixelSize/2)) {
+          return;
+        }
+        
         // Sample and draw video at this pixel location
         this.ctx.drawImage(
           this.videoElement,
