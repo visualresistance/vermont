@@ -59,7 +59,22 @@ body {
     z-index: 1;
 }
 
-.landing-video-main {
+.video-container {
+    position: relative;
+    width: 50%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.video-container-left {
+    left: 0;
+}
+
+.video-container-right {
+    right: 0;
+}
+
+.landing-video {
     position: absolute;
     top: 0;
     left: 0;
@@ -69,7 +84,7 @@ body {
 }
 
 /* Video scan canvas overlay */
-.video-scan-canvas-main {
+.video-scan-canvas {
     position: absolute;
     top: 0;
     left: 0;

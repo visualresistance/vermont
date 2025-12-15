@@ -1,19 +1,20 @@
 /**
  * Video Scan Effect
- * Reveals video content line by line with alternating gaps
- * Pattern: 7 lines of video → 7 lines of black → repeat, scrolling up then down
- * Uses a single video for the entire landing page
+ * Reveals video content in solid bands: 7 lines of video, then 7 lines of black
+ * Pattern scrolls upward on left side, then downward on right side
+ * Starts from completely black screen
  */
 
 class VideoScanEffect {
-  constructor(videoElement, canvasElement) {
+  constructor(videoElement, canvasElement, side = 'left') {
     this.videoElement = videoElement;
     this.canvas = canvasElement;
     this.ctx = this.canvas.getContext('2d');
     this.animationStartTime = null;
     this.animationDuration = 30000; // 30 seconds for full cycle
-    this.linesPerBand = 7; // 7 lines of video, then 7 lines of black
-    this.lineHeight = 2; // Height of each line in pixels
+    this.bandHeight = 7; // 7 lines per solid band
+    this.lineHeight = 1; // Height of each line in pixels
+    this.side = side; // 'left' or 'right'
     this.isAnimating = true;
     
     // Set canvas size to match video
@@ -33,55 +34,27 @@ class VideoScanEffect {
     }
   }
 
-  getRevealPattern(progress) {
+  getScrollProgress(progress) {
     // progress: 0 to 1 over 30 seconds
-    // Returns which lines should be visible as video vs black
-    // Each "band" is 14 lines (7 video + 7 black)
+    // Returns scroll progress based on which side we're on
     
     const cycleProgress = progress % 1.0;
     
-    // Timeline:
-    // 0.0-0.50: Scroll upward on left side
-    // 0.50-1.0: Scroll downward on right side
-    
-    let scrollProgress; // 0 to 1 for current scroll
-    let isLeftSide = true;
-    
-    if (cycleProgress < 0.50) {
-      // Left side, scrolling up
-      scrollProgress = cycleProgress / 0.50;
-      isLeftSide = true;
+    if (this.side === 'left') {
+      // Left side: use first 50% of cycle for scrolling up
+      if (cycleProgress < 0.5) {
+        return cycleProgress / 0.5; // 0 to 1
+      } else {
+        return 1.0; // Stay at top when right side is moving
+      }
     } else {
-      // Right side, scrolling down
-      scrollProgress = (cycleProgress - 0.50) / 0.50;
-      isLeftSide = false;
+      // Right side: use second 50% of cycle for scrolling down
+      if (cycleProgress >= 0.5) {
+        return (cycleProgress - 0.5) / 0.5; // 0 to 1
+      } else {
+        return 0.0; // Stay at top while left side is moving
+      }
     }
-    
-    // Calculate how many pixels to offset (scroll)
-    // Total scroll distance is the canvas height
-    const scrollPixels = scrollProgress * this.canvas.height;
-    
-    return {
-      scrollPixels,
-      isLeftSide,
-      scrollProgress
-    };
-  }
-
-  isLineVisible(lineY, scrollPixels, isLeftSide) {
-    // Determine if this line should show video or be black
-    // Lines are in 14-line bands: 7 video, 7 black
-    
-    // Calculate which band this line falls into after scrolling
-    const adjustedY = (lineY + scrollPixels) % (this.canvas.height);
-    
-    // Within the canvas, determine the pattern
-    // Each band is 14 lines (7 video + 7 black)
-    const bandSize = this.linesPerBand * 2; // 14
-    const positionInBand = Math.floor(adjustedY / this.lineHeight) % bandSize;
-    
-    // First 7 lines (0-6) are video, next 7 (7-13) are black
-    return positionInBand < this.linesPerBand;
   }
 
   drawReveal(progress) {
@@ -89,21 +62,45 @@ class VideoScanEffect {
     this.ctx.fillStyle = '#000000';
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     
-    // Get the reveal pattern
-    const pattern = this.getRevealPattern(progress);
+    // Get scroll progress for this side
+    const scrollProgress = this.getScrollProgress(progress);
+    
+    // For a "start at lower left and scroll up", we need to calculate which bands are visible
+    // Total canvas height divided by band size (7 video + 7 black = 14 lines)
+    const totalBandSize = this.bandHeight * 2; // 14 lines per complete cycle
+    const pixelsPerLine = this.canvas.height / (this.bandHeight * 20); // Approximate line height
+    
+    // Calculate scroll offset
+    // Start at bottom, scroll upward to top
+    let scrollPixels;
+    if (this.side === 'left') {
+      // Left: scroll from bottom (positive) to top (negative)
+      scrollPixels = (1 - scrollProgress) * this.canvas.height;
+    } else {
+      // Right: scroll from top (0) to bottom (positive)
+      scrollPixels = scrollProgress * this.canvas.height;
+    }
     
     // Draw the video
     if (this.videoElement.readyState >= 2) {
       this.ctx.drawImage(this.videoElement, 0, 0, this.canvas.width, this.canvas.height);
     }
     
-    // Now mask with black lines to create the reveal effect
+    // Now mask with black to create the band effect
+    // Calculate which bands should be black based on scroll position
     this.ctx.fillStyle = '#000000';
     
-    // Draw horizontal lines of black based on the pattern
+    const pixelHeight = this.canvas.height / (this.bandHeight * 20); // Estimate pixels per line
+    
+    // Draw black bands (masking out video)
     for (let y = 0; y < this.canvas.height; y += this.lineHeight) {
-      if (!this.isLineVisible(y, pattern.scrollPixels, pattern.isLeftSide)) {
-        // This line should be black
+      // Calculate which band this y position falls into
+      const adjustedY = (y + scrollPixels) % (this.canvas.height * 2);
+      const bandSize = this.canvas.height / (this.bandHeight * 2);
+      const positionInBand = (adjustedY / bandSize) % (this.bandHeight * 2);
+      
+      // First 7 units are video, next 7 are black
+      if (positionInBand >= this.bandHeight) {
         this.ctx.fillRect(0, y, this.canvas.width, this.lineHeight);
       }
     }
@@ -159,14 +156,22 @@ if (document.readyState === 'loading') {
 }
 
 function initVideoScanEffects() {
-  const videoEl = document.getElementById('video-main');
-  const canvasEl = document.getElementById('canvas-scan');
+  const videoLeftEl = document.getElementById('video-left');
+  const videoRightEl = document.getElementById('video-right');
+  const canvasLeftEl = document.getElementById('canvas-left');
+  const canvasRightEl = document.getElementById('canvas-right');
 
-  if (videoEl && canvasEl) {
-    window.scanEffect = new VideoScanEffect(videoEl, canvasEl);
-    // Start scan when video is ready
-    videoEl.addEventListener('loadedmetadata', () => {
-      window.scanEffect.start();
+  if (videoLeftEl && canvasLeftEl) {
+    window.scanEffectLeft = new VideoScanEffect(videoLeftEl, canvasLeftEl, 'left');
+    videoLeftEl.addEventListener('loadedmetadata', () => {
+      window.scanEffectLeft.start();
+    });
+  }
+
+  if (videoRightEl && canvasRightEl) {
+    window.scanEffectRight = new VideoScanEffect(videoRightEl, canvasRightEl, 'right');
+    videoRightEl.addEventListener('loadedmetadata', () => {
+      window.scanEffectRight.start();
     });
   }
 }
