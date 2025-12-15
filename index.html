@@ -17,16 +17,22 @@
         <div id="landing-page" class="scene active">
             <!-- Fullscreen split videos -->
             <div class="landing-videos">
-                <video id="landing-video-left" class="landing-video landing-video-left" autoplay loop muted playsinline>
-                    <source src="assets/media/walk-left.mov" type="video/mp4">
-                    <source src="assets/media/walk-left.m4v" type="video/mp4">
-                    <source src="assets/media/walk-left.mp4" type="video/mp4">
-                </video>
-                <video id="landing-video-right" class="landing-video landing-video-right" autoplay loop muted playsinline>
-                    <source src="assets/media/walk-right.mov" type="video/mp4">
-                    <source src="assets/media/walk-right.m4v" type="video/mp4">
-                    <source src="assets/media/walk-right.mp4" type="video/mp4">
-                </video>
+                <div class="video-container video-container-left">
+                    <video id="video-left" class="landing-video landing-video-left" autoplay loop muted playsinline>
+                        <source src="assets/media/walk-left.mov" type="video/mp4">
+                        <source src="assets/media/walk-left.m4v" type="video/mp4">
+                        <source src="assets/media/walk-left.mp4" type="video/mp4">
+                    </video>
+                    <canvas id="canvas-left" class="video-scan-canvas video-scan-left"></canvas>
+                </div>
+                <div class="video-container video-container-right">
+                    <video id="video-right" class="landing-video landing-video-right" autoplay loop muted playsinline>
+                        <source src="assets/media/walk-right.mov" type="video/mp4">
+                        <source src="assets/media/walk-right.m4v" type="video/mp4">
+                        <source src="assets/media/walk-right.mp4" type="video/mp4">
+                    </video>
+                    <canvas id="canvas-right" class="video-scan-canvas video-scan-right"></canvas>
+                </div>
             </div>
             
             <!-- Centered lot boundary with animated point -->
@@ -160,6 +166,7 @@
     <script src="js/timeline-scene.js"></script>
     <script src="js/cases-gallery.js"></script>
     <script src="js/boundary-animation.js"></script>
+    <script src="js/video-scan-effect.js"></script>
 
     <script>
         // Navigation logic

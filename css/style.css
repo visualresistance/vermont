@@ -59,8 +59,23 @@ body {
     z-index: 1;
 }
 
-.landing-video {
+.video-container {
+    position: relative;
     width: 50%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.video-container-left {
+    left: 0;
+}
+
+.video-container-right {
+    right: 0;
+}
+
+.landing-video {
+    width: 100%;
     height: 100%;
     object-fit: cover;
     opacity: 0.7;
@@ -73,6 +88,24 @@ body {
 
 .landing-video-right {
     object-position: center left;
+}
+
+/* Video scan canvas overlay */
+.video-scan-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.video-scan-left {
+    left: 0;
+}
+
+.video-scan-right {
+    right: 0;
 }
 
 /* Overlay with lot boundary and title */

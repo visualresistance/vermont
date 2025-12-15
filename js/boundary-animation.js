@@ -21,8 +21,8 @@ const boundaryAnimation = {
         
         this.point = document.getElementById('boundary-point');
         this.svgElement = document.getElementById('lot-boundary-svg');
-        this.videoLeft = document.getElementById('landing-video-left');
-        this.videoRight = document.getElementById('landing-video-right');
+        this.videoLeft = document.getElementById('video-left');
+        this.videoRight = document.getElementById('video-right');
         
         if (!this.point || !this.svgElement) {
             console.warn('[BoundaryAnimation] Missing elements');
