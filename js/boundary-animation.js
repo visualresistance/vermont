@@ -102,10 +102,8 @@ const boundaryAnimation = {
         const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
         polygon.setAttribute('id', 'lot-polygon-dynamic');
         polygon.setAttribute('points', pointsStr);
-        polygon.setAttribute('fill', 'rgba(0,0,0,0.2)');
-        polygon.setAttribute('stroke', '#64c8ff');
-        polygon.setAttribute('stroke-width', '4');
-        polygon.setAttribute('filter', 'url(#glow)');
+        polygon.setAttribute('fill', 'none');
+        polygon.setAttribute('stroke', 'none');
         
         // Insert before the point
         const point = this.svgElement.querySelector('#boundary-point');
