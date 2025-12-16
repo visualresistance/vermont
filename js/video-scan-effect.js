@@ -25,6 +25,9 @@ class VideoScanEffect {
     // Polygon exclusion zone (will be populated from boundary animation)
     this.polygonBounds = null;
     
+    // Navigation bubble exclusion zones
+    this.bubbleZones = [];
+    
     // Set canvas size to match video
     this.updateCanvasSize();
     
@@ -33,6 +36,9 @@ class VideoScanEffect {
     
     // Get polygon bounds for exclusion
     this.initPolygonExclusion();
+    
+    // Get navigation bubble bounds for exclusion
+    this.initBubbleExclusion();
     
     // Start animation loop
     this.animate();
@@ -49,6 +55,50 @@ class VideoScanEffect {
       }
     };
     checkBoundary();
+  }
+
+  initBubbleExclusion() {
+    // Get all navigation bubbles and calculate their exclusion zones
+    const bubbles = document.querySelectorAll('.nav-bubble');
+    const canvasRect = this.canvas.getBoundingClientRect();
+    const scaleCanvasX = this.canvas.width / canvasRect.width;
+    const scaleCanvasY = this.canvas.height / canvasRect.height;
+    
+    this.bubbleZones = Array.from(bubbles).map(bubble => {
+      const rect = bubble.getBoundingClientRect();
+      
+      // Convert to canvas-relative coordinates with resolution scaling
+      const x = (rect.left - canvasRect.left) * scaleCanvasX;
+      const y = (rect.top - canvasRect.top) * scaleCanvasY;
+      const width = rect.width * scaleCanvasX;
+      const height = rect.height * scaleCanvasY;
+      
+      // Add padding for better exclusion
+      const padding = 10 * Math.min(scaleCanvasX, scaleCanvasY);
+      
+      return {
+        x: x - padding,
+        y: y - padding,
+        width: width + padding * 2,
+        height: height + padding * 2,
+        // Calculate ellipse params for circular bubbles
+        centerX: x + width / 2,
+        centerY: y + height / 2,
+        radiusX: (width + padding * 2) / 2,
+        radiusY: (height + padding * 2) / 2
+      };
+    });
+    
+    console.log('[VideoScanEffect] Navigation bubble exclusion zones set:', this.bubbleZones.length);
+  }
+
+  isPointInBubble(x, y) {
+    // Check if point is inside any navigation bubble (using ellipse test)
+    return this.bubbleZones.some(zone => {
+      const dx = (x - zone.centerX) / zone.radiusX;
+      const dy = (y - zone.centerY) / zone.radiusY;
+      return (dx * dx + dy * dy) <= 1;
+    });
   }
 
   calculatePolygonScreenBounds(svgPoints) {
@@ -200,8 +250,16 @@ class VideoScanEffect {
       if (!col.active) return;
       
       col.pixels.forEach(pixel => {
+        const pixelCenterX = col.x + this.pixelSize/2;
+        const pixelCenterY = pixel.y + this.pixelSize/2;
+        
         // Skip if pixel is inside the polygon - we'll draw clear video there instead
-        if (this.isPointInPolygon(col.x + this.pixelSize/2, pixel.y + this.pixelSize/2)) {
+        if (this.isPointInPolygon(pixelCenterX, pixelCenterY)) {
+          return;
+        }
+        
+        // Skip if pixel is inside any navigation bubble
+        if (this.isPointInBubble(pixelCenterX, pixelCenterY)) {
           return;
         }
         

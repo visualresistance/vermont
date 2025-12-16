@@ -52,35 +52,35 @@
                 </div>
             </div>
 
-            <!-- Navigation Icons -->
+            <!-- Navigation Bubbles -->
             <!-- Top Left: Presence -->
-            <div class="adventure-icon" data-adventure="presence" style="left: 3%; top: 3%;">
-                <div class="icon-symbol">▶</div>
-                <div class="icon-label">Presence</div>
+            <div class="nav-bubble" data-adventure="presence" style="left: 5%; top: 5%;">
+                Presence
             </div>
 
             <!-- Top Right: Data Lives -->
-            <div class="adventure-icon" data-adventure="data-lives" style="right: 3%; top: 3%;">
-                <div class="icon-symbol">📊</div>
-                <div class="icon-label">Data Lives</div>
+            <div class="nav-bubble" data-adventure="data-lives" style="right: 5%; top: 5%;">
+                Data Lives
             </div>
 
-            <!-- Left: Time -->
-            <div class="adventure-icon" data-adventure="time" style="left: 3%; top: 50%; transform: translateY(-50%);">
-                <div class="icon-symbol">⏳</div>
-                <div class="icon-label">Time</div>
+            <!-- Left: Archive -->
+            <div class="nav-bubble" data-adventure="time" style="left: 5%; top: 30%;">
+                Archive
             </div>
 
             <!-- Right: Create -->
-            <div class="adventure-icon" data-adventure="create" style="right: 3%; top: 50%; transform: translateY(-50%);">
-                <div class="icon-symbol">✏</div>
-                <div class="icon-label">Create</div>
+            <div class="nav-bubble" data-adventure="create" style="right: 5%; top: 30%;">
+                Create
             </div>
 
-            <!-- Bottom: Cases -->
-            <div class="adventure-icon" data-adventure="cases" style="left: 50%; bottom: 3%; transform: translateX(-50%);">
-                <div class="icon-symbol">📁</div>
-                <div class="icon-label">Cases</div>
+            <!-- Bottom Left: Cases -->
+            <div class="nav-bubble" data-adventure="cases" style="left: 5%; bottom: 5%;">
+                Cases
+            </div>
+
+            <!-- Bottom Right: About -->
+            <div class="nav-bubble" data-adventure="about" style="right: 5%; bottom: 5%;">
+                About
             </div>
         </div>
 
@@ -139,6 +139,17 @@
                     <span class="modal-close">&times;</span>
                     <div id="modal-body"></div>
                 </div>
+            </div>
+        </div>
+
+        <!-- About Section -->
+        <div id="about-section" class="scene">
+            <div class="section-header">
+                <button class="home-button" onclick="goHome()">← Home</button>
+                <h2 class="section-title">About</h2>
+            </div>
+            <div class="section-content">
+                <div class="placeholder-content">More to come</div>
             </div>
         </div>
     </div>
@@ -242,16 +253,17 @@
                 });
             }
             
-            const adventureIcons = document.querySelectorAll('.adventure-icon');
-            adventureIcons.forEach(icon => {
-                icon.addEventListener('click', () => {
-                    const adventure = icon.getAttribute('data-adventure');
+            const navBubbles = document.querySelectorAll('.nav-bubble');
+            navBubbles.forEach(bubble => {
+                bubble.addEventListener('click', () => {
+                    const adventure = bubble.getAttribute('data-adventure');
                     const sectionMap = {
                         'presence': 'presence-section',
                         'data-lives': 'data-lives-section',
                         'time': 'time-section',
                         'create': 'create-section',
-                        'cases': 'cases-section'
+                        'cases': 'cases-section',
+                        'about': 'about-section'
                     };
                     showScene(sectionMap[adventure]);
                 });

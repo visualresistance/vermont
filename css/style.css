@@ -173,6 +173,35 @@ body {
     }
 }
 
+/* Navigation Bubbles */
+.nav-bubble {
+    position: absolute;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    padding: 14px 28px;
+    border-radius: 40px;
+    border: 2px solid rgba(100, 200, 255, 0.5);
+    font-size: 16px;
+    font-weight: 500;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    cursor: pointer;
+    pointer-events: auto;
+    transition: all 0.3s ease;
+    text-align: center;
+    z-index: 10;
+    opacity: 0.8;
+    letter-spacing: 0.5px;
+}
+
+.nav-bubble:hover {
+    background: rgba(100, 200, 255, 0.3);
+    border-color: rgba(100, 200, 255, 1);
+    transform: scale(1.08);
+    opacity: 1;
+    box-shadow: 0 0 20px rgba(100, 200, 255, 0.5);
+}
+
+/* Old adventure icon styles - deprecated */
 .adventure-icons {
     display: flex;
     justify-content: space-between;
