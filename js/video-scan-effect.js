@@ -57,20 +57,23 @@ class VideoScanEffect {
     if (!svgElement) return null;
 
     const svgRect = svgElement.getBoundingClientRect();
+    const canvasRect = this.canvas.getBoundingClientRect();
     const viewBoxSize = 1000; // SVG viewBox is 0 0 1000 1000
     
     // Scale factor from SVG coordinates to screen pixels
     const scaleX = svgRect.width / viewBoxSize;
     const scaleY = svgRect.height / viewBoxSize;
     
-    // Convert SVG polygon points to screen coordinates
-    const screenPoints = svgPoints.map(p => ({
-      x: svgRect.left + (p.x * scaleX),
-      y: svgRect.top + (p.y * scaleY)
+    // Convert SVG polygon points to canvas-relative coordinates
+    const canvasPoints = svgPoints.map(p => ({
+      x: (svgRect.left - canvasRect.left) + (p.x * scaleX),
+      y: (svgRect.top - canvasRect.top) + (p.y * scaleY)
     }));
     
+    console.log('[VideoScanEffect] Sample canvas point:', canvasPoints[0], 'Canvas size:', this.canvas.width, 'x', this.canvas.height);
+    
     return {
-      points: screenPoints,
+      points: canvasPoints,
       svgRect: svgRect
     };
   }
