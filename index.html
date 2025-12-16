@@ -54,32 +54,32 @@
 
             <!-- Navigation Bubbles - Circular arrangement around polygon -->
             <!-- Top: Presence -->
-            <div class="nav-bubble" data-adventure="presence" style="left: 50%; top: 15%; transform: translateX(-50%);">
+            <div class="nav-bubble" data-adventure="presence" style="left: 50%; top: 5%; transform: translateX(-50%);">
                 Presence
             </div>
 
             <!-- Top Right: Data Lives -->
-            <div class="nav-bubble" data-adventure="data-lives" style="left: 80%; top: 32%;">
+            <div class="nav-bubble" data-adventure="data-lives" style="left: 80%; top: 32%; margin-left: -50px; margin-top: -50px;">
                 Data Lives
             </div>
 
             <!-- Bottom Right: Archive -->
-            <div class="nav-bubble" data-adventure="archive" style="left: 80%; top: 68%;">
+            <div class="nav-bubble" data-adventure="archive" style="left: 80%; top: 68%; margin-left: -50px; margin-top: -50px;">
                 Archive
             </div>
 
             <!-- Bottom: Create -->
-            <div class="nav-bubble" data-adventure="create" style="left: 50%; top: 85%; transform: translateX(-50%);">
+            <div class="nav-bubble" data-adventure="create" style="left: 50%; top: 85%; margin-left: -50px;">
                 Create
             </div>
 
             <!-- Bottom Left: Cases -->
-            <div class="nav-bubble" data-adventure="cases" style="left: 20%; top: 68%;">
+            <div class="nav-bubble" data-adventure="cases" style="left: 20%; top: 68%; margin-left: -50px; margin-top: -50px;">
                 Cases
             </div>
 
             <!-- Top Left: About -->
-            <div class="nav-bubble" data-adventure="about" style="left: 20%; top: 32%;">
+            <div class="nav-bubble" data-adventure="about" style="left: 20%; top: 32%; margin-left: -50px; margin-top: -50px;">
                 About
             </div>
         </div>
@@ -252,6 +252,34 @@
                     goHome();
                 });
             }
+            
+            // Initialize circular text for navigation bubbles
+            function initCircularText() {
+                const navBubbles = document.querySelectorAll('.nav-bubble');
+                navBubbles.forEach(bubble => {
+                    const text = bubble.textContent.trim();
+                    bubble.textContent = '';
+                    
+                    const textContainer = document.createElement('div');
+                    textContainer.className = 'nav-bubble-text';
+                    
+                    const chars = text.split('');
+                    const angleStep = 360 / chars.length;
+                    const startAngle = -90; // Start at top
+                    
+                    chars.forEach((char, i) => {
+                        const span = document.createElement('span');
+                        span.textContent = char;
+                        const angle = startAngle + (i * angleStep);
+                        span.style.transform = `rotate(${angle}deg)`;
+                        textContainer.appendChild(span);
+                    });
+                    
+                    bubble.appendChild(textContainer);
+                });
+            }
+            
+            initCircularText();
             
             const navBubbles = document.querySelectorAll('.nav-bubble');
             navBubbles.forEach(bubble => {
