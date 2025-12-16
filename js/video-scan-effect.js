@@ -182,19 +182,16 @@ class VideoScanEffect {
       return;
     }
     
-    // Draw the full video
-    this.ctx.drawImage(this.videoElement, 0, 0, this.canvas.width, this.canvas.height);
-    
-    // Overlay black everywhere
+    // Start with black
     this.ctx.fillStyle = '#000000';
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     
-    // Draw only the falling pixel blocks to reveal video
+    // Draw falling pixel blocks everywhere
     this.columns.forEach(col => {
       if (!col.active) return;
       
       col.pixels.forEach(pixel => {
-        // Skip if pixel is inside the polygon exclusion zone
+        // Skip if pixel is inside the polygon - we'll draw clear video there instead
         if (this.isPointInPolygon(col.x + this.pixelSize/2, pixel.y + this.pixelSize/2)) {
           return;
         }
@@ -208,12 +205,26 @@ class VideoScanEffect {
       });
     });
     
-    // When density is high (near 1.0), show more of the full video underneath
-    if (density > 0.7) {
-      const videoAlpha = (density - 0.7) / 0.3; // 0 to 1 as density goes from 0.7 to 1.0
-      this.ctx.globalAlpha = videoAlpha * 0.6;
+    // Draw clear video inside the polygon boundary
+    if (this.polygonBounds && this.polygonBounds.points.length > 0) {
+      this.ctx.save();
+      
+      // Create clipping path from polygon
+      this.ctx.beginPath();
+      const points = this.polygonBounds.points;
+      this.ctx.moveTo(points[0].x, points[0].y);
+      for (let i = 1; i < points.length; i++) {
+        this.ctx.lineTo(points[i].x, points[i].y);
+      }
+      this.ctx.closePath();
+      this.ctx.clip();
+      
+      // Draw full clear video inside the polygon (with fade based on density)
+      const videoAlpha = (density - 0.2) / 0.8; // 0 to 1 as density goes from 0.2 to 1.0
+      this.ctx.globalAlpha = Math.max(0.3, Math.min(1.0, videoAlpha));
       this.ctx.drawImage(this.videoElement, 0, 0, this.canvas.width, this.canvas.height);
-      this.ctx.globalAlpha = 1.0;
+      
+      this.ctx.restore();
     }
   }
 
