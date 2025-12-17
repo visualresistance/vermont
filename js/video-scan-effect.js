@@ -286,12 +286,8 @@ class VideoScanEffect {
       this.ctx.closePath();
       this.ctx.clip();
       
-      // Sync polygon fade to falling pixel timing
-      // Calculate how long it takes for first pixel to fall from top to bottom
-      // Height / speed = frames, frames / 60fps = seconds
-      const pixelFallTime = this.canvas.height / this.fallSpeed / 60; // in seconds
-      const cycleDuration = this.animationDuration / 1000; // 60 seconds
-      const fallProgress = pixelFallTime / cycleDuration; // ~0.5 (half the cycle)
+      // Simpler approach: fade in during first half, fade out during second half
+      // Match the visual rhythm of falling pixels
       
       let videoAlpha, fragmentSize;
       
@@ -301,22 +297,18 @@ class VideoScanEffect {
         return t * t * (3 - 2 * t);
       };
       
-      if (progress < fallProgress) {
-        // Fade in: perfectly synced to first pixel falling from top to bottom
-        const t = progress / fallProgress;
+      if (progress < 0.5) {
+        // Fade in: first half of cycle (30 seconds)
+        const t = progress / 0.5;
         const eased = smoothEase(t);
-        videoAlpha = eased * 0.8; // 0 -> 0.8 as pixel falls
-        fragmentSize = 32 - (eased * 16); // 32 -> 16 (fragments shrink as it fades in)
-      } else if (progress < fallProgress * 2) {
-        // Fade out: same timing, back to black
-        const t = (progress - fallProgress) / fallProgress;
-        const eased = smoothEase(t);
-        videoAlpha = 0.8 - (eased * 0.8); // 0.8 -> 0 as pixel falls again
-        fragmentSize = 16 + (eased * 16); // 16 -> 32 (fragments grow as it fades out)
+        videoAlpha = eased * 0.9; // 0 -> 0.9 
+        fragmentSize = 32 - (eased * 20); // 32 -> 12 (fragments shrink)
       } else {
-        // Reset and stay black until next cycle
-        videoAlpha = 0;
-        fragmentSize = 32;
+        // Fade out: second half of cycle (30 seconds)
+        const t = (progress - 0.5) / 0.5;
+        const eased = smoothEase(t);
+        videoAlpha = 0.9 - (eased * 0.9); // 0.9 -> 0
+        fragmentSize = 12 + (eased * 20); // 12 -> 32 (fragments grow)
       }
       
       // Draw pixelated/fragmented video inside polygon
