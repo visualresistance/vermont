@@ -286,59 +286,37 @@ class VideoScanEffect {
       this.ctx.closePath();
       this.ctx.clip();
       
-      // Calculate fragmentation based on progress with extremely gradual fade
-      // Using cubic easing for ultra-smooth, imperceptible fade
-      // 0.0-0.6: Ultra-gradual fade in from complete black
-      // 0.6-0.75: Continue to full clarity
-      // 0.75-0.9: Stay clear
-      // 0.9-1.0: Fade back to black
+      // Sync polygon fade to falling pixel timing
+      // Calculate how long it takes for first pixel to fall from top to bottom
+      // Height / speed = frames, frames / 60fps = seconds
+      const pixelFallTime = this.canvas.height / this.fallSpeed / 60; // in seconds
+      const cycleDuration = this.animationDuration / 1000; // 60 seconds
+      const fallProgress = pixelFallTime / cycleDuration; // ~0.5 (half the cycle)
       
       let videoAlpha, fragmentSize;
       
-      // Cubic easing for extremely gradual transitions
-      const easeInCubic = (t) => {
-        return t * t * t; // Starts very slow, accelerates later
+      // Smooth easing function
+      const smoothEase = (t) => {
+        // Smooth acceleration and deceleration
+        return t * t * (3 - 2 * t);
       };
       
-      const easeOutCubic = (t) => {
-        const t1 = t - 1;
-        return t1 * t1 * t1 + 1; // Decelerates towards end
-      };
-      
-      if (progress < 0.35) {
-        // Ultra-gradual fade in phase 1: black -> barely perceptible
-        const t = progress / 0.35;
-        const eased = easeInCubic(t);
-        videoAlpha = eased * 0.08; // 0 -> 0.08 over 21 seconds
-        fragmentSize = 32;
-      } else if (progress < 0.5) {
-        // Phase 2: barely visible -> somewhat visible
-        const t = (progress - 0.35) / 0.15;
-        const eased = easeInCubic(t);
-        videoAlpha = 0.08 + (eased * 0.17); // 0.08 -> 0.25 over 9 seconds
-        fragmentSize = 32;
-      } else if (progress < 0.6) {
-        // Phase 3: somewhat visible -> half visible
-        const t = (progress - 0.5) / 0.1;
-        const eased = easeInCubic(t);
-        videoAlpha = 0.25 + (eased * 0.25); // 0.25 -> 0.5 over 6 seconds
-        fragmentSize = 32 - (eased * 8); // 32 -> 24
-      } else if (progress < 0.75) {
-        // Phase 4: half visible -> fully clear
-        const t = (progress - 0.6) / 0.15;
-        const eased = easeOutCubic(t);
-        videoAlpha = 0.5 + (eased * 0.5); // 0.5 -> 1.0 over 9 seconds
-        fragmentSize = 24 - (eased * 16); // 24 -> 8
-      } else if (progress < 0.9) {
-        // Stay clear
-        videoAlpha = 1.0;
-        fragmentSize = 8;
+      if (progress < fallProgress) {
+        // Fade in: perfectly synced to first pixel falling from top to bottom
+        const t = progress / fallProgress;
+        const eased = smoothEase(t);
+        videoAlpha = eased * 0.8; // 0 -> 0.8 as pixel falls
+        fragmentSize = 32 - (eased * 16); // 32 -> 16 (fragments shrink as it fades in)
+      } else if (progress < fallProgress * 2) {
+        // Fade out: same timing, back to black
+        const t = (progress - fallProgress) / fallProgress;
+        const eased = smoothEase(t);
+        videoAlpha = 0.8 - (eased * 0.8); // 0.8 -> 0 as pixel falls again
+        fragmentSize = 16 + (eased * 16); // 16 -> 32 (fragments grow as it fades out)
       } else {
-        // Gradual fade back to black
-        const t = (progress - 0.9) / 0.1;
-        const eased = easeInCubic(t);
-        videoAlpha = 1.0 - (eased * 1.0); // 1.0 -> 0 over 6 seconds
-        fragmentSize = 8 + (eased * 24); // 8 -> 32
+        // Reset and stay black until next cycle
+        videoAlpha = 0;
+        fragmentSize = 32;
       }
       
       // Draw pixelated/fragmented video inside polygon
