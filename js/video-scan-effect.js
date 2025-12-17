@@ -272,7 +272,7 @@ class VideoScanEffect {
       });
     });
     
-    // Draw clear video inside the polygon boundary
+    // Draw fragmented/fading video inside the polygon boundary
     if (this.polygonBounds && this.polygonBounds.points.length > 0) {
       this.ctx.save();
       
@@ -286,10 +286,60 @@ class VideoScanEffect {
       this.ctx.closePath();
       this.ctx.clip();
       
-      // Draw full clear video inside the polygon (with fade based on density)
-      const videoAlpha = (density - 0.2) / 0.8; // 0 to 1 as density goes from 0.2 to 1.0
-      this.ctx.globalAlpha = Math.max(0.3, Math.min(1.0, videoAlpha));
-      this.ctx.drawImage(this.videoElement, 0, 0, this.canvas.width, this.canvas.height);
+      // Calculate fragmentation based on progress
+      // 0.0-0.3: Start black, fade in fragmented (0 -> 0.5 alpha, large pixels)
+      // 0.3-0.5: Decrease fragmentation, increase clarity (smaller pixels, higher alpha)
+      // 0.5-0.7: Full clear video (1.0 alpha, no pixelation)
+      // 0.7-1.0: Fade back to fragmented (smaller alpha, larger pixels)
+      
+      let videoAlpha, fragmentSize;
+      
+      if (progress < 0.3) {
+        // Fade in fragmented: black -> fragmented
+        const t = progress / 0.3;
+        videoAlpha = t * 0.5; // 0 -> 0.5
+        fragmentSize = 32; // Large pixels
+      } else if (progress < 0.5) {
+        // Clear up: fragmented -> clear
+        const t = (progress - 0.3) / 0.2;
+        videoAlpha = 0.5 + (t * 0.5); // 0.5 -> 1.0
+        fragmentSize = 32 - (t * 24); // 32 -> 8
+      } else if (progress < 0.7) {
+        // Stay clear
+        videoAlpha = 1.0;
+        fragmentSize = 8;
+      } else {
+        // Fragment back: clear -> fragmented
+        const t = (progress - 0.7) / 0.3;
+        videoAlpha = 1.0 - (t * 0.5); // 1.0 -> 0.5
+        fragmentSize = 8 + (t * 24); // 8 -> 32
+      }
+      
+      // Draw pixelated/fragmented video inside polygon
+      this.ctx.globalAlpha = videoAlpha;
+      
+      if (fragmentSize > 8) {
+        // Draw fragmented (pixelated) video
+        const bounds = this.polygonBounds;
+        for (let x = Math.floor(bounds.minX); x < bounds.maxX; x += fragmentSize) {
+          for (let y = Math.floor(bounds.minY); y < bounds.maxY; y += fragmentSize) {
+            const centerX = x + fragmentSize / 2;
+            const centerY = y + fragmentSize / 2;
+            
+            // Check if this fragment is inside polygon
+            if (this.isPointInPolygon(centerX, centerY)) {
+              this.ctx.drawImage(
+                this.videoElement,
+                x, y, fragmentSize, fragmentSize,
+                x, y, fragmentSize, fragmentSize
+              );
+            }
+          }
+        }
+      } else {
+        // Draw clear video
+        this.ctx.drawImage(this.videoElement, 0, 0, this.canvas.width, this.canvas.height);
+      }
       
       this.ctx.restore();
     }
