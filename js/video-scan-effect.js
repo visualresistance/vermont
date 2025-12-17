@@ -316,34 +316,39 @@ class VideoScanEffect {
         console.log('[Polygon fade] progress:', progress.toFixed(3), 'alpha:', videoAlpha.toFixed(3), 'fragmentSize:', fragmentSize.toFixed(1));
       }
       
-      // Draw pixelated/fragmented video inside polygon
+      // Draw pixelated/fragmented video inside polygon - let clip path handle boundaries
       if (videoAlpha > 0.01) {
         this.ctx.globalAlpha = videoAlpha;
         
-        // Draw fragmented (pixelated) video
-        const bounds = this.polygonBounds;
-        let drawnCount = 0;
+        // Create a temporary canvas for pixelation effect
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = this.canvas.width;
+        tempCanvas.height = this.canvas.height;
+        const tempCtx = tempCanvas.getContext('2d');
         
-        for (let x = Math.floor(bounds.minX); x < bounds.maxX; x += fragmentSize) {
-          for (let y = Math.floor(bounds.minY); y < bounds.maxY; y += fragmentSize) {
-            const centerX = x + fragmentSize / 2;
-            const centerY = y + fragmentSize / 2;
+        // Draw pixelated video to temp canvas
+        const cols = Math.ceil(this.canvas.width / fragmentSize);
+        const rows = Math.ceil(this.canvas.height / fragmentSize);
+        
+        for (let i = 0; i < cols; i++) {
+          for (let j = 0; j < rows; j++) {
+            const x = i * fragmentSize;
+            const y = j * fragmentSize;
             
-            // Check if this fragment is inside polygon
-            if (this.isPointInPolygon(centerX, centerY)) {
-              this.ctx.drawImage(
-                this.videoElement,
-                x, y, fragmentSize, fragmentSize,
-                x, y, fragmentSize, fragmentSize
-              );
-              drawnCount++;
-            }
+            tempCtx.drawImage(
+              this.videoElement,
+              x, y, fragmentSize, fragmentSize,
+              x, y, fragmentSize, fragmentSize
+            );
           }
         }
         
+        // Draw the pixelated temp canvas to main canvas (already clipped to polygon)
+        this.ctx.drawImage(tempCanvas, 0, 0);
+        
         // Debug occasionally
-        if (Math.random() < 0.01 && drawnCount > 0) {
-          console.log('[Polygon render] Drew', drawnCount, 'fragments, alpha:', videoAlpha.toFixed(3), 'video ready:', this.videoElement.readyState);
+        if (Math.random() < 0.01) {
+          console.log('[Polygon render] alpha:', videoAlpha.toFixed(3), 'fragmentSize:', fragmentSize.toFixed(1), 'video ready:', this.videoElement.readyState);
         }
       }
       
