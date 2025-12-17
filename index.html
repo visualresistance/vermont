@@ -67,8 +67,8 @@
             </div>
 
             <!-- Right Cluster (triangle formation) -->
-            <div class="nav-bubble" data-adventure="data-lives" style="left: 82%; top: 28%; margin-left: -50px; margin-top: -50px;">
-                Data Lives
+            <div class="nav-bubble" data-adventure="maps" style="left: 82%; top: 28%; margin-left: -50px; margin-top: -50px;">
+                Maps
             </div>
 
             <div class="nav-bubble" data-adventure="create" style="left: 88%; top: 50%; margin-left: -50px; margin-top: -50px;">
@@ -88,11 +88,11 @@
             </video>
         </div>
 
-        <!-- Data Lives Section (Map) -->
-        <div id="data-lives-section" class="scene">
+        <!-- Maps Section (Map) -->
+        <div id="maps-section" class="scene">
             <div class="section-header">
                 <button class="home-button" onclick="goHome()">← Home</button>
-                <h2 class="section-title">Data Lives</h2>
+                <h2 class="section-title">Maps</h2>
             </div>
             <div id="map-container"></div>
         </div>
@@ -192,7 +192,7 @@
                     if (video) {
                         video.play().catch(err => console.log('Video autoplay blocked:', err));
                     }
-                } else if (sceneId === 'data-lives-section') {
+                } else if (sceneId === 'maps-section') {
                     // Initialize map if not already done
                     if (window.mapboxScene && typeof window.mapboxScene.initInteractiveMap === 'function' && !window.mapboxScene.map) {
                         try {
@@ -283,7 +283,7 @@
                     const adventure = bubble.getAttribute('data-adventure');
                     const sectionMap = {
                         'presence': 'presence-section',
-                        'data-lives': 'data-lives-section',
+                        'maps': 'maps-section',
                         'time': 'time-section',
                         'archive': 'time-section',
                         'create': 'create-section',
