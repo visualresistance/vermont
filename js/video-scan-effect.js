@@ -320,27 +320,30 @@ class VideoScanEffect {
       if (videoAlpha > 0.01) {
         this.ctx.globalAlpha = videoAlpha;
         
-        if (fragmentSize > 8) {
-          // Draw fragmented (pixelated) video
-          const bounds = this.polygonBounds;
-          for (let x = Math.floor(bounds.minX); x < bounds.maxX; x += fragmentSize) {
-            for (let y = Math.floor(bounds.minY); y < bounds.maxY; y += fragmentSize) {
-              const centerX = x + fragmentSize / 2;
-              const centerY = y + fragmentSize / 2;
-              
-              // Check if this fragment is inside polygon
-              if (this.isPointInPolygon(centerX, centerY)) {
-                this.ctx.drawImage(
-                  this.videoElement,
-                  x, y, fragmentSize, fragmentSize,
-                  x, y, fragmentSize, fragmentSize
-                );
-              }
+        // Draw fragmented (pixelated) video
+        const bounds = this.polygonBounds;
+        let drawnCount = 0;
+        
+        for (let x = Math.floor(bounds.minX); x < bounds.maxX; x += fragmentSize) {
+          for (let y = Math.floor(bounds.minY); y < bounds.maxY; y += fragmentSize) {
+            const centerX = x + fragmentSize / 2;
+            const centerY = y + fragmentSize / 2;
+            
+            // Check if this fragment is inside polygon
+            if (this.isPointInPolygon(centerX, centerY)) {
+              this.ctx.drawImage(
+                this.videoElement,
+                x, y, fragmentSize, fragmentSize,
+                x, y, fragmentSize, fragmentSize
+              );
+              drawnCount++;
             }
           }
-        } else {
-          // Draw clear video
-          this.ctx.drawImage(this.videoElement, 0, 0, this.canvas.width, this.canvas.height);
+        }
+        
+        // Debug occasionally
+        if (Math.random() < 0.01 && drawnCount > 0) {
+          console.log('[Polygon render] Drew', drawnCount, 'fragments, alpha:', videoAlpha.toFixed(3), 'video ready:', this.videoElement.readyState);
         }
       }
       
