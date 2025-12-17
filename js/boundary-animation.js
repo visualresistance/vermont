@@ -7,7 +7,7 @@
 const boundaryAnimation = {
     polygonPoints: [],
     
-    point: null,
+    traceLine: null,
     svgElement: null,
     polygonElement: null,
     isRunning: false,
@@ -19,12 +19,11 @@ const boundaryAnimation = {
     async init() {
         console.log('[BoundaryAnimation] Initializing...');
         
-        this.point = document.getElementById('boundary-point');
         this.svgElement = document.getElementById('lot-boundary-svg');
         this.videoLeft = document.getElementById('video-main');
         
-        if (!this.point || !this.svgElement) {
-            console.warn('[BoundaryAnimation] Missing elements');
+        if (!this.svgElement) {
+            console.warn('[BoundaryAnimation] Missing SVG element');
             return;
         }
         
