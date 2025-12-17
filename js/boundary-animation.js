@@ -162,14 +162,27 @@ const boundaryAnimation = {
         const elapsed = (now - this.startTime) / 1000;
         const currentTime = elapsed % this.mockDuration;
         
-        // Get position on polygon path
+        // Get current position and next position on polygon path
         const progress = currentTime / this.mockDuration;
-        const { x, y } = this.getPointOnPath(progress);
+        const lineLength = 0.05; // Line covers 5% of the path
+        const { x: x1, y: y1 } = this.getPointOnPath(progress);
+        const { x: x2, y: y2 } = this.getPointOnPath((progress + lineLength) % 1);
         
-        // Update SVG point position
-        if (this.point && x && y) {
-            this.point.setAttribute('cx', x);
-            this.point.setAttribute('cy', y);
+        // Update SVG line position (create if doesn't exist)
+        if (!this.traceLine) {
+            this.traceLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            this.traceLine.setAttribute('id', 'boundary-trace-line');
+            this.traceLine.setAttribute('stroke', '#ff4444');
+            this.traceLine.setAttribute('stroke-width', '3');
+            this.traceLine.setAttribute('stroke-linecap', 'round');
+            this.svgElement.appendChild(this.traceLine);
+        }
+        
+        if (this.traceLine && x1 && y1 && x2 && y2) {
+            this.traceLine.setAttribute('x1', x1);
+            this.traceLine.setAttribute('y1', y1);
+            this.traceLine.setAttribute('x2', x2);
+            this.traceLine.setAttribute('y2', y2);
         }
         
         // Continue animation
