@@ -105,11 +105,8 @@ const boundaryAnimation = {
         polygon.setAttribute('fill', 'none');
         polygon.setAttribute('stroke', 'none');
         
-        // Insert before the point
-        const point = this.svgElement.querySelector('#boundary-point');
-        if (point && point.parentNode) {
-            point.parentNode.insertBefore(polygon, point);
-        }
+        // Append polygon to SVG
+        this.svgElement.appendChild(polygon);
         
         console.log('[BoundaryAnimation] Generated SVG polygon');
     },
