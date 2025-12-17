@@ -52,35 +52,31 @@
                 </div>
             </div>
 
-            <!-- Navigation Bubbles - Circular arrangement around polygon -->
-            <!-- Top: Presence -->
-            <div class="nav-bubble" data-adventure="presence" style="left: 50%; top: 5%; transform: translateX(-50%);">
+            <!-- Navigation Bubbles - Clustered left and right of polygon -->
+            <!-- Left Cluster (triangle formation) -->
+            <div class="nav-bubble" data-adventure="presence" style="left: 18%; top: 28%; margin-left: -50px; margin-top: -50px;">
                 Presence
             </div>
 
-            <!-- Top Right: Data Lives -->
-            <div class="nav-bubble" data-adventure="data-lives" style="left: 80%; top: 32%; margin-left: -50px; margin-top: -50px;">
-                Data Lives
+            <div class="nav-bubble" data-adventure="about" style="left: 12%; top: 50%; margin-left: -50px; margin-top: -50px;">
+                About
             </div>
 
-            <!-- Bottom Right: Archive -->
-            <div class="nav-bubble" data-adventure="archive" style="left: 80%; top: 68%; margin-left: -50px; margin-top: -50px;">
-                Archive
-            </div>
-
-            <!-- Bottom: Create -->
-            <div class="nav-bubble" data-adventure="create" style="left: 50%; top: 85%; margin-left: -50px;">
-                Create
-            </div>
-
-            <!-- Bottom Left: Cases -->
-            <div class="nav-bubble" data-adventure="cases" style="left: 20%; top: 68%; margin-left: -50px; margin-top: -50px;">
+            <div class="nav-bubble" data-adventure="cases" style="left: 18%; top: 72%; margin-left: -50px; margin-top: -50px;">
                 Cases
             </div>
 
-            <!-- Top Left: About -->
-            <div class="nav-bubble" data-adventure="about" style="left: 20%; top: 32%; margin-left: -50px; margin-top: -50px;">
-                About
+            <!-- Right Cluster (triangle formation) -->
+            <div class="nav-bubble" data-adventure="data-lives" style="left: 82%; top: 28%; margin-left: -50px; margin-top: -50px;">
+                Data Lives
+            </div>
+
+            <div class="nav-bubble" data-adventure="create" style="left: 88%; top: 50%; margin-left: -50px; margin-top: -50px;">
+                Create
+            </div>
+
+            <div class="nav-bubble" data-adventure="archive" style="left: 82%; top: 72%; margin-left: -50px; margin-top: -50px;">
+                Archive
             </div>
         </div>
 
@@ -264,8 +260,8 @@
                     textContainer.className = 'nav-bubble-text';
                     
                     const chars = text.split('');
-                    const angleStep = 280 / chars.length; // Reduced from 360 for tighter spacing
-                    const startAngle = -50; // Adjusted start position
+                    const angleStep = 200 / chars.length; // Tighter spacing for readability
+                    const startAngle = -10; // Center the arc
                     
                     chars.forEach((char, i) => {
                         const span = document.createElement('span');
