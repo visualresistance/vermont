@@ -35,6 +35,18 @@ class TimelineScene {
 
         this.layer = new Konva.Layer();
         this.stage.add(this.layer);
+        
+        // Performance optimization: disable shadows during drag
+        this.isDragging = false;
+        this.stage.on('dragstart', () => {
+            this.isDragging = true;
+            this.toggleShadows(false);
+        });
+        
+        this.stage.on('dragend', () => {
+            this.isDragging = false;
+            this.toggleShadows(true);
+        });
 
         this.createTimeline();
         this.loadDocuments();
@@ -47,7 +59,7 @@ class TimelineScene {
             const rect = this.container.getBoundingClientRect();
             this.stage.width(rect.width);
             this.stage.height(rect.height);
-            this.stage.draw();
+            this.stage.batchDraw();
         });
     }
 
@@ -180,9 +192,14 @@ class TimelineScene {
             height: h,
             cornerRadius: 6,
             shadowColor: 'black',
-            shadowBlur: 6,
-            shadowOpacity: 0.3
+            shadowBlur: 4,
+            shadowOpacity: 0.3,
+            shadowEnabled: true,
+            perfectDrawEnabled: false
         });
+        
+        // Cache the image for better performance
+        konvaImage.cache();
 
         const label = new Konva.Text({
             x: x - w/2,
@@ -263,9 +280,14 @@ class TimelineScene {
             height: h,
             cornerRadius: 6,
             shadowColor: 'black',
-            shadowBlur: 6,
-            shadowOpacity: 0.3
+            shadowBlur: 4,
+            shadowOpacity: 0.3,
+            shadowEnabled: true,
+            perfectDrawEnabled: false
         });
+        
+        // Cache the image for better performance
+        konvaImage.cache();
 
         const label = new Konva.Text({
             x: x - w/2,
@@ -308,6 +330,15 @@ class TimelineScene {
         const img = new Image();
         img.src = c.toDataURL('image/png');
         return img;
+    }
+
+    toggleShadows(enabled) {
+        this.items.forEach(item => {
+            if (item.konvaImage) {
+                item.konvaImage.shadowEnabled(enabled);
+            }
+        });
+        this.layer.batchDraw();
     }
 
     addZoomHandlers() {
