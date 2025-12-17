@@ -286,33 +286,48 @@ class VideoScanEffect {
       this.ctx.closePath();
       this.ctx.clip();
       
-      // Calculate fragmentation based on progress
-      // 0.0-0.3: Start black, fade in fragmented (0 -> 0.5 alpha, large pixels)
-      // 0.3-0.5: Decrease fragmentation, increase clarity (smaller pixels, higher alpha)
-      // 0.5-0.7: Full clear video (1.0 alpha, no pixelation)
-      // 0.7-1.0: Fade back to fragmented (smaller alpha, larger pixels)
+      // Calculate fragmentation based on progress with smooth easing
+      // 0.0-0.45: Very gradual fade in from black (0 -> 0.4 alpha, large pixels)
+      // 0.45-0.55: Transition to clarity (0.4 -> 0.8 alpha, shrinking pixels)
+      // 0.55-0.7: Reach full clarity (0.8 -> 1.0 alpha, small pixels)
+      // 0.7-0.85: Stay clear
+      // 0.85-1.0: Gradual fade back to black (1.0 -> 0 alpha)
       
       let videoAlpha, fragmentSize;
       
-      if (progress < 0.3) {
-        // Fade in fragmented: black -> fragmented
-        const t = progress / 0.3;
-        videoAlpha = t * 0.5; // 0 -> 0.5
+      // Easing function for smoother transitions
+      const easeInOut = (t) => {
+        return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+      };
+      
+      if (progress < 0.45) {
+        // Very gradual fade in: black -> barely visible fragmented
+        const t = progress / 0.45;
+        const eased = easeInOut(t);
+        videoAlpha = eased * 0.15; // 0 -> 0.15 (very subtle)
         fragmentSize = 32; // Large pixels
-      } else if (progress < 0.5) {
-        // Clear up: fragmented -> clear
-        const t = (progress - 0.3) / 0.2;
-        videoAlpha = 0.5 + (t * 0.5); // 0.5 -> 1.0
-        fragmentSize = 32 - (t * 24); // 32 -> 8
+      } else if (progress < 0.55) {
+        // Start becoming more visible
+        const t = (progress - 0.45) / 0.1;
+        const eased = easeInOut(t);
+        videoAlpha = 0.15 + (eased * 0.35); // 0.15 -> 0.5
+        fragmentSize = 32 - (eased * 8); // 32 -> 24
       } else if (progress < 0.7) {
+        // Continue to full clarity
+        const t = (progress - 0.55) / 0.15;
+        const eased = easeInOut(t);
+        videoAlpha = 0.5 + (eased * 0.5); // 0.5 -> 1.0
+        fragmentSize = 24 - (eased * 16); // 24 -> 8
+      } else if (progress < 0.85) {
         // Stay clear
         videoAlpha = 1.0;
         fragmentSize = 8;
       } else {
-        // Fragment back: clear -> fragmented
-        const t = (progress - 0.7) / 0.3;
-        videoAlpha = 1.0 - (t * 0.5); // 1.0 -> 0.5
-        fragmentSize = 8 + (t * 24); // 8 -> 32
+        // Gradual fade back to black
+        const t = (progress - 0.85) / 0.15;
+        const eased = easeInOut(t);
+        videoAlpha = 1.0 - (eased * 1.0); // 1.0 -> 0
+        fragmentSize = 8 + (eased * 24); // 8 -> 32
       }
       
       // Draw pixelated/fragmented video inside polygon
