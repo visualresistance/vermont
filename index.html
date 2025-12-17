@@ -264,8 +264,8 @@
                     textContainer.className = 'nav-bubble-text';
                     
                     const chars = text.split('');
-                    const angleStep = 360 / chars.length;
-                    const startAngle = -90; // Start at top
+                    const angleStep = 280 / chars.length; // Reduced from 360 for tighter spacing
+                    const startAngle = -50; // Adjusted start position
                     
                     chars.forEach((char, i) => {
                         const span = document.createElement('span');
