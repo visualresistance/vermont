@@ -8,6 +8,8 @@ const boundaryAnimation = {
     polygonPoints: [],
     
     traceLine: null,
+    tracePoint: null,
+    traceGradient: null,
     svgElement: null,
     polygonElement: null,
     isRunning: false,
@@ -158,28 +160,82 @@ const boundaryAnimation = {
         const elapsed = (now - this.startTime) / 1000;
         const currentTime = elapsed % this.mockDuration;
         
-        // Get current position and next position on polygon path
+        // Get current position on polygon path
         const progress = currentTime / this.mockDuration;
-        const lineLength = 0.05; // Line covers 5% of the path
-        const { x: x1, y: y1 } = this.getPointOnPath(progress);
-        const { x: x2, y: y2 } = this.getPointOnPath((progress + lineLength) % 1);
+        const trailLength = 0.08; // Trail covers 8% of path behind the point
         
-        // Update SVG line position (create if doesn't exist)
+        // Current point position
+        const { x: pointX, y: pointY } = this.getPointOnPath(progress);
+        
+        // Create trail path from back to front
+        const pathData = [];
+        const segments = 30; // Number of segments for smooth trail
+        for (let i = 0; i <= segments; i++) {
+            const t = i / segments;
+            const trailProgress = (progress - (trailLength * (1 - t)) + 1) % 1;
+            const { x, y } = this.getPointOnPath(trailProgress);
+            pathData.push(i === 0 ? `M ${x} ${y}` : `L ${x} ${y}`);
+        }
+        
+        // Create gradient if it doesn't exist
+        if (!this.traceGradient) {
+            const defs = this.svgElement.querySelector('defs') || this.svgElement.insertBefore(
+                document.createElementNS('http://www.w3.org/2000/svg', 'defs'),
+                this.svgElement.firstChild
+            );
+            
+            this.traceGradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+            this.traceGradient.setAttribute('id', 'trace-gradient');
+            this.traceGradient.setAttribute('gradientUnits', 'userSpaceOnUse');
+            
+            const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+            stop1.setAttribute('offset', '0%');
+            stop1.setAttribute('stop-color', '#c084fc'); // Purple
+            stop1.setAttribute('stop-opacity', '0');
+            
+            const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+            stop2.setAttribute('offset', '100%');
+            stop2.setAttribute('stop-color', '#e879f9'); // Pinkish
+            stop2.setAttribute('stop-opacity', '0.8');
+            
+            this.traceGradient.appendChild(stop1);
+            this.traceGradient.appendChild(stop2);
+            defs.appendChild(this.traceGradient);
+        }
+        
+        // Create or update trail path
         if (!this.traceLine) {
-            this.traceLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            this.traceLine = document.createElementNS('http://www.w3.org/2000/svg', 'path');
             this.traceLine.setAttribute('id', 'boundary-trace-line');
-            this.traceLine.setAttribute('stroke', '#ff4444');
+            this.traceLine.setAttribute('stroke', 'url(#trace-gradient)');
             this.traceLine.setAttribute('stroke-width', '3');
             this.traceLine.setAttribute('stroke-linecap', 'round');
+            this.traceLine.setAttribute('fill', 'none');
             this.svgElement.appendChild(this.traceLine);
         }
         
-        if (this.traceLine && x1 && y1 && x2 && y2) {
-            this.traceLine.setAttribute('x1', x1);
-            this.traceLine.setAttribute('y1', y1);
-            this.traceLine.setAttribute('x2', x2);
-            this.traceLine.setAttribute('y2', y2);
+        // Create or update point
+        if (!this.tracePoint) {
+            this.tracePoint = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+            this.tracePoint.setAttribute('r', '4');
+            this.tracePoint.setAttribute('fill', '#e879f9'); // Pinkish
+            this.tracePoint.setAttribute('stroke', '#ffffff');
+            this.tracePoint.setAttribute('stroke-width', '1.5');
+            this.tracePoint.setAttribute('opacity', '0.9');
+            this.svgElement.appendChild(this.tracePoint);
         }
+        
+        // Update gradient direction based on trail
+        const { x: backX, y: backY } = this.getPointOnPath((progress - trailLength + 1) % 1);
+        this.traceGradient.setAttribute('x1', backX);
+        this.traceGradient.setAttribute('y1', backY);
+        this.traceGradient.setAttribute('x2', pointX);
+        this.traceGradient.setAttribute('y2', pointY);
+        
+        // Update trail path and point position
+        this.traceLine.setAttribute('d', pathData.join(' '));
+        this.tracePoint.setAttribute('cx', pointX);
+        this.tracePoint.setAttribute('cy', pointY);
         
         // Continue animation
         this.animationFrameId = requestAnimationFrame(() => this.animate());
