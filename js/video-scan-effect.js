@@ -286,47 +286,58 @@ class VideoScanEffect {
       this.ctx.closePath();
       this.ctx.clip();
       
-      // Calculate fragmentation based on progress with smooth easing
-      // 0.0-0.45: Very gradual fade in from black (0 -> 0.4 alpha, large pixels)
-      // 0.45-0.55: Transition to clarity (0.4 -> 0.8 alpha, shrinking pixels)
-      // 0.55-0.7: Reach full clarity (0.8 -> 1.0 alpha, small pixels)
-      // 0.7-0.85: Stay clear
-      // 0.85-1.0: Gradual fade back to black (1.0 -> 0 alpha)
+      // Calculate fragmentation based on progress with extremely gradual fade
+      // Using cubic easing for ultra-smooth, imperceptible fade
+      // 0.0-0.6: Ultra-gradual fade in from complete black
+      // 0.6-0.75: Continue to full clarity
+      // 0.75-0.9: Stay clear
+      // 0.9-1.0: Fade back to black
       
       let videoAlpha, fragmentSize;
       
-      // Easing function for smoother transitions
-      const easeInOut = (t) => {
-        return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+      // Cubic easing for extremely gradual transitions
+      const easeInCubic = (t) => {
+        return t * t * t; // Starts very slow, accelerates later
       };
       
-      if (progress < 0.45) {
-        // Very gradual fade in: black -> barely visible fragmented
-        const t = progress / 0.45;
-        const eased = easeInOut(t);
-        videoAlpha = eased * 0.15; // 0 -> 0.15 (very subtle)
-        fragmentSize = 32; // Large pixels
-      } else if (progress < 0.55) {
-        // Start becoming more visible
-        const t = (progress - 0.45) / 0.1;
-        const eased = easeInOut(t);
-        videoAlpha = 0.15 + (eased * 0.35); // 0.15 -> 0.5
+      const easeOutCubic = (t) => {
+        const t1 = t - 1;
+        return t1 * t1 * t1 + 1; // Decelerates towards end
+      };
+      
+      if (progress < 0.35) {
+        // Ultra-gradual fade in phase 1: black -> barely perceptible
+        const t = progress / 0.35;
+        const eased = easeInCubic(t);
+        videoAlpha = eased * 0.08; // 0 -> 0.08 over 21 seconds
+        fragmentSize = 32;
+      } else if (progress < 0.5) {
+        // Phase 2: barely visible -> somewhat visible
+        const t = (progress - 0.35) / 0.15;
+        const eased = easeInCubic(t);
+        videoAlpha = 0.08 + (eased * 0.17); // 0.08 -> 0.25 over 9 seconds
+        fragmentSize = 32;
+      } else if (progress < 0.6) {
+        // Phase 3: somewhat visible -> half visible
+        const t = (progress - 0.5) / 0.1;
+        const eased = easeInCubic(t);
+        videoAlpha = 0.25 + (eased * 0.25); // 0.25 -> 0.5 over 6 seconds
         fragmentSize = 32 - (eased * 8); // 32 -> 24
-      } else if (progress < 0.7) {
-        // Continue to full clarity
-        const t = (progress - 0.55) / 0.15;
-        const eased = easeInOut(t);
-        videoAlpha = 0.5 + (eased * 0.5); // 0.5 -> 1.0
+      } else if (progress < 0.75) {
+        // Phase 4: half visible -> fully clear
+        const t = (progress - 0.6) / 0.15;
+        const eased = easeOutCubic(t);
+        videoAlpha = 0.5 + (eased * 0.5); // 0.5 -> 1.0 over 9 seconds
         fragmentSize = 24 - (eased * 16); // 24 -> 8
-      } else if (progress < 0.85) {
+      } else if (progress < 0.9) {
         // Stay clear
         videoAlpha = 1.0;
         fragmentSize = 8;
       } else {
         // Gradual fade back to black
-        const t = (progress - 0.85) / 0.15;
-        const eased = easeInOut(t);
-        videoAlpha = 1.0 - (eased * 1.0); // 1.0 -> 0
+        const t = (progress - 0.9) / 0.1;
+        const eased = easeInCubic(t);
+        videoAlpha = 1.0 - (eased * 1.0); // 1.0 -> 0 over 6 seconds
         fragmentSize = 8 + (eased * 24); // 8 -> 32
       }
       
